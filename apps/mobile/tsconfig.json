@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@ig/shared": ["../../packages/shared/src"],
+      "@ig/ui": ["../../packages/ui/src"]
+    }
+  }
+}

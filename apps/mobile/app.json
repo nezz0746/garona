@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Instagram Clone",
+    "slug": "instagram-clone",
+    "scheme": "ig-clone",
+    "version": "1.0.0",
+    "platforms": ["ios", "android", "web"],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
