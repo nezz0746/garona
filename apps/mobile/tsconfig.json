@@ -3,8 +3,18 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@ig/shared": ["../../packages/shared/src"],
-      "@ig/ui": ["../../packages/ui/src"]
+      "@ig/shared": [
+        "../../packages/shared/src"
+      ],
+      "@ig/ui": [
+        "../../packages/ui/src"
+      ]
     }
-  }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
 }
