@@ -35,4 +35,4 @@ export const API_URL = __DEV__
   ? Platform.OS === "android"
     ? "http://10.0.2.2:3001"
     : "http://192.168.1.58:3001"
-  : "https://api.garona.city";
+  : process.env.EXPO_PUBLIC_API_URL;

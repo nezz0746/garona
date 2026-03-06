@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, Modal, Pressable, Share, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  Pressable,
+  Share,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import { colors } from "@garona/shared";
@@ -12,8 +20,14 @@ type Props = {
   avatarUrl: string | null;
 };
 
-export function ProfileShareSheet({ visible, onClose, username, name, avatarUrl }: Props) {
-  const profileUrl = `https://garona.city/@${username}`;
+export function ProfileShareSheet({
+  visible,
+  onClose,
+  username,
+  name,
+  avatarUrl,
+}: Props) {
+  const profileUrl = `https://garona.econome.studio/@${username}`;
 
   const handleShare = async () => {
     try {
@@ -36,7 +50,12 @@ export function ProfileShareSheet({ visible, onClose, username, name, avatarUrl 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
       <View style={styles.container}>
         {/* Handle + close */}
         <View style={styles.header}>
@@ -95,7 +114,9 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   handle: {
-    width: 40, height: 4, borderRadius: 2,
+    width: 40,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: colors.border,
   },
   closeBtn: { position: "absolute", right: 16, top: 0 },
