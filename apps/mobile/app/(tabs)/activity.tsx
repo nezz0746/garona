@@ -44,7 +44,7 @@ export default function ActivityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  title: { fontSize: 18, fontWeight: "700", color: colors.text, padding: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: "700", color: colors.primary, padding: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10, gap: 12 },
   content: { flex: 1 },
   text: { color: colors.text, fontSize: 13, lineHeight: 18 },

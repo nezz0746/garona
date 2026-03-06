@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
-  logo: { fontSize: 24, fontWeight: "700", color: colors.text, letterSpacing: -0.5 },
+  logo: { fontSize: 24, fontWeight: "700", color: colors.primary, letterSpacing: -0.5 },
   headerIcons: { flexDirection: "row", gap: 16 },
 });

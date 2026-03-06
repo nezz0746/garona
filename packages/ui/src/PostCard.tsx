@@ -82,6 +82,6 @@ const styles = StyleSheet.create({
   info: { paddingHorizontal: 14, gap: 4, paddingBottom: 8 },
   likesText: { color: colors.text, fontWeight: "600", fontSize: 13 },
   caption: { color: colors.text, fontSize: 13, lineHeight: 18 },
-  commentsLink: { color: colors.textMuted, fontSize: 13 },
+  commentsLink: { color: colors.primary, fontSize: 13 },
   timeAgo: { color: colors.textMuted, fontSize: 11 },
 });

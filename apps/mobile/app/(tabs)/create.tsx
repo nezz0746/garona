@@ -27,7 +27,7 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  title: { fontSize: 18, fontWeight: "700", color: colors.text, padding: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border },
+  title: { fontSize: 18, fontWeight: "700", color: colors.primary, padding: 16, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
   sub: { color: colors.textMuted, fontSize: 14 },
   row: { flexDirection: "row", gap: 32, marginTop: 16 },
