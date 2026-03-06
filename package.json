@@ -8,9 +8,16 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "check": "biome check .",
+    "check:fix": "biome check --fix .",
+    "format": "biome format .",
+    "format:fix": "biome format --fix .",
+    "build:api": "turbo build --filter=api",
+    "start:api": "turbo start --filter=api"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.6",
     "turbo": "^2"
   },
   "pnpm": {

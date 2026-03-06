@@ -1,14 +1,16 @@
 import { useState, useCallback } from "react";
-import { FlatList, View, Text, StyleSheet, RefreshControl } from "react-native";
+import { FlatList, View, Text, StyleSheet, RefreshControl, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
-import { IconButton } from "@garona/ui";
 import { useFeed } from "../../hooks/useFeed";
 import { FeedPostCard } from "../../components/FeedPostCard";
 import { CommentsSheet } from "../../components/CommentsSheet";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { posts, loading, error, refresh, toggleLike } = useFeed();
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
 
@@ -21,10 +23,9 @@ export default function HomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.logo}>Garona</Text>
-        <View style={styles.headerIcons}>
-          <IconButton name="heart-outline" size={26} />
-          <IconButton name="chatbubble-ellipses-outline" />
-        </View>
+        <Pressable onPress={() => router.push("/guide")} hitSlop={8}>
+          <Ionicons name="book-outline" size={24} color={colors.text} />
+        </Pressable>
       </View>
 
       <FlatList

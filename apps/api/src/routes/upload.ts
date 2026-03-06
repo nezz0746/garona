@@ -63,8 +63,27 @@ app.post("/", requirePalier(2), async (c) => {
     return c.json({ error: "Upload failed" }, 500);
   }
 
-  const publicUrl = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
+  // Return proxied URL through API (works from phone)
+  const baseUrl = process.env.PUBLIC_API_URL || new URL(c.req.url).origin;
+  const publicUrl = `${baseUrl}/api/upload/images/${key}`;
   return c.json({ url: publicUrl, key });
+});
+
+// Proxy S3 images so mobile can access them via API URL
+app.get("/images/:key{.+}", async (c) => {
+  const key = c.req.param("key");
+  const S3_ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:9000";
+  const S3_BUCKET = process.env.S3_BUCKET || "garona";
+
+  const res = await fetch(`${S3_ENDPOINT}/${S3_BUCKET}/${key}`);
+  if (!res.ok) return c.json({ error: "Not found" }, 404);
+
+  const contentType = res.headers.get("content-type") || "image/jpeg";
+  const body = await res.arrayBuffer();
+  return c.body(body, 200, {
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=31536000",
+  });
 });
 
 export default app;

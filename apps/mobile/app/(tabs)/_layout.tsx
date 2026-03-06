@@ -19,6 +19,7 @@ export default function TabLayout() {
       <Tabs.Screen name="search" options={{ href: null }} />
       <Tabs.Screen name="create" options={{ tabBarIcon: ({ color }: TabIcon) => <Ionicons name="add-circle-outline" size={28} color={color} /> }} />
       <Tabs.Screen name="activity" options={{ tabBarIcon: ({ color, focused }: TabIcon) => <Ionicons name={focused ? "heart" : "heart-outline"} size={26} color={color} /> }} />
+      <Tabs.Screen name="guide" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ tabBarIcon: ({ color, focused }: TabIcon) => <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={28} color={color} /> }} />
     </Tabs>
   );

@@ -85,12 +85,32 @@ export default function CreateScreen() {
     }
   };
 
+  const uploadImage = async (uri: string): Promise<string> => {
+    const filename = uri.split("/").pop() || "photo.jpg";
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+
+    const formData = new FormData();
+    formData.append("file", { uri, name: filename, type } as any);
+
+    const res = await fetch(`${API_URL}/api/upload`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        ...((__DEV__ && user?.username) ? { "X-Dev-User": user.username } : {}),
+      },
+    });
+    if (!res.ok) throw new Error("Upload échoué");
+    const data = await res.json();
+    return data.url;
+  };
+
   const handlePost = async () => {
     if (selected.length === 0) return;
     setUploading(true);
     try {
-      // For now, use local URIs (upload not wired to S3 yet)
-      const imageUrls = selected;
+      // Upload each image to S3/MinIO
+      const imageUrls = await Promise.all(selected.map(uploadImage));
       await postsApi.create(imageUrls, caption || undefined);
       setSelected([]);
       setCaption("");
