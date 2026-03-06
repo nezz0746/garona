@@ -142,6 +142,11 @@ export const signinApi = {
     }),
 };
 
+// ─── Me (session-based) ───
+export const meApi = {
+  get: () => apiFetch<SignupResult>("/api/me"),
+};
+
 // ─── Upload ───
 export const uploadApi = {
   presign: (contentType = "image/jpeg") =>

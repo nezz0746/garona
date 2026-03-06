@@ -13,13 +13,15 @@ export const auth = betterAuth({
     passkey({
       rpID: process.env.PASSKEY_RP_ID || "localhost",
       rpName: "Garona",
-      origin: process.env.PASSKEY_ORIGIN || "http://localhost:3001",
+      origin: process.env.PASSKEY_ORIGIN || "http://localhost:8081",
     }),
   ],
   trustedOrigins: [
     "http://localhost:8081",
     "http://localhost:19006",
+    "http://localhost:3001",
     "http://192.168.1.58:3001",
+    "https://garona.econome.studio",
     "garona://",
   ],
 });

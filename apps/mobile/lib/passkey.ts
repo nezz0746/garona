@@ -1,74 +1,62 @@
 import { Platform } from "react-native";
-import { Passkey } from "react-native-passkey";
+import { authClient } from "./auth-client";
 
-const RP_ID = "garona.city"; // must match your domain
-const RP_NAME = "Garona";
-
-export async function isPasskeySupported(): Promise<boolean> {
+/**
+ * Register a passkey for the currently authenticated user.
+ * Uses Better Auth's passkeyClient which handles:
+ * - Challenge generation (server-side)
+ * - WebAuthn ceremony (browser on web, native bridge on mobile)
+ * - Credential verification & storage (server-side)
+ */
+export async function registerPasskey(): Promise<boolean> {
   try {
-    // react-native-passkey checks platform support
-    return Passkey.isSupported();
-  } catch {
+    const { error } = await authClient.passkey.addPasskey();
+    if (error) {
+      console.log("Passkey registration error:", error);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.log("Passkey registration failed:", e);
     return false;
   }
 }
 
-export async function createPasskey(userId: string, userName: string): Promise<{ credentialId: string; publicKey: string } | null> {
+/**
+ * Sign in with a passkey.
+ * Better Auth handles the full WebAuthn authentication flow.
+ * Returns the authenticated user or null.
+ */
+export async function signInWithPasskey(): Promise<{
+  id: string;
+  name: string;
+} | null> {
   try {
-    const supported = await isPasskeySupported();
-    if (!supported) return null;
-
-    const result = await Passkey.register({
-      challenge: generateChallenge(),
-      rp: { id: RP_ID, name: RP_NAME },
-      user: {
-        id: userId,
-        name: userName,
-        displayName: userName,
-      },
-      authenticatorSelection: {
-        authenticatorAttachment: "platform",
-        userVerification: "preferred",
-        residentKey: "preferred",
-      },
-    });
-
-    return {
-      credentialId: result.id,
-      publicKey: result.response.publicKey || "",
-    };
+    const { data, error } = await authClient.signIn.passkey();
+    if (error) {
+      console.log("Passkey sign-in error:", error);
+      return null;
+    }
+    if (!data?.user) return null;
+    return { id: data.user.id, name: data.user.name };
   } catch (e) {
-    console.log("Passkey creation failed:", e);
+    console.log("Passkey sign-in failed:", e);
     return null;
   }
 }
 
-export async function authenticatePasskey(): Promise<{ credentialId: string; signature: string } | null> {
+/**
+ * Check if passkeys are supported on the current platform.
+ */
+export async function isPasskeySupported(): Promise<boolean> {
+  if (Platform.OS === "web") {
+    return typeof window !== "undefined" && !!window.PublicKeyCredential;
+  }
+
   try {
-    const supported = await isPasskeySupported();
-    if (!supported) return null;
-
-    const result = await Passkey.authenticate({
-      challenge: generateChallenge(),
-      rpId: RP_ID,
-      userVerification: "preferred",
-    });
-
-    return {
-      credentialId: result.id,
-      signature: result.response.signature || "",
-    };
-  } catch (e) {
-    console.log("Passkey auth failed:", e);
-    return null;
+    const { Passkey } = await import("react-native-passkey");
+    return Passkey.isSupported();
+  } catch {
+    return false;
   }
-}
-
-function generateChallenge(): string {
-  // Generate a random challenge (in production, get this from the server)
-  const array = new Uint8Array(32);
-  for (let i = 0; i < 32; i++) {
-    array[i] = Math.floor(Math.random() * 256);
-  }
-  return btoa(String.fromCharCode(...array));
 }
