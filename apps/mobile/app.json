@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Instagram Clone",
-    "slug": "instagram-clone",
-    "scheme": "ig-clone",
+    "name": "Garona",
+    "slug": "garona",
+    "scheme": "garona",
     "version": "1.0.0",
     "platforms": ["ios", "android", "web"],
     "web": {

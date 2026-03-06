@@ -9,7 +9,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.logo}>Instagram</Text>
+        <Text style={styles.logo}>Garona</Text>
         <View style={styles.headerIcons}>
           <IconButton name="heart-outline" size={26} />
           <IconButton name="chatbubble-ellipses-outline" />
@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: colors.border,
   },
-  logo: { fontSize: 24, fontWeight: "700", color: colors.text, fontStyle: "italic" },
+  logo: { fontSize: 24, fontWeight: "700", color: colors.text, letterSpacing: -0.5 },
   headerIcons: { flexDirection: "row", gap: 16 },
 });

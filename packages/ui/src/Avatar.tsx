@@ -18,7 +18,7 @@ export function Avatar({ uri, size = 32, ring = false, seen = false }: Props) {
           width: outer,
           height: outer,
           borderRadius: outer / 2,
-          borderColor: seen ? colors.border : "#e1306c",
+          borderColor: seen ? colors.border : colors.primary,
         },
       ]}
     >

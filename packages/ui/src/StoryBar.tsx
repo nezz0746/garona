@@ -34,5 +34,5 @@ const styles = StyleSheet.create({
   item: { alignItems: "center", width: 68 },
   label: { color: colors.text, fontSize: 11, marginTop: 4, textAlign: "center" },
   seen: { color: colors.textMuted },
-  addBadge: { position: "absolute", bottom: -2, right: -2, backgroundColor: colors.bg, borderRadius: 10 },
+  addBadge: { position: "absolute", bottom: -2, right: -2, backgroundColor: colors.bg, borderRadius: 10, overflow: "hidden" },
 });

@@ -95,5 +95,5 @@ const styles = StyleSheet.create({
   editText: { color: colors.text, fontWeight: "600", fontSize: 13 },
   tabs: { flexDirection: "row", borderTopWidth: 0.5, borderTopColor: colors.border, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   tab: { flex: 1, alignItems: "center", paddingVertical: 10 },
-  activeTab: { borderBottomWidth: 1, borderBottomColor: colors.text },
+  activeTab: { borderBottomWidth: 2, borderBottomColor: colors.primary },
 });

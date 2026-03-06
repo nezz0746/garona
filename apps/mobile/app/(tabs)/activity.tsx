@@ -51,6 +51,6 @@ const styles = StyleSheet.create({
   bold: { fontWeight: "600" },
   time: { color: colors.textMuted },
   followBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 },
-  followText: { color: colors.text, fontWeight: "600", fontSize: 13 },
+  followText: { color: "#ffffff", fontWeight: "600", fontSize: 13 },
   thumb: { width: 40, height: 40, borderRadius: 4 },
 });
