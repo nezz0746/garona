@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsup src/index.ts --format esm --target node22",
+    "build": "tsup",
     "start": "node dist/index.mjs",
     "lint": "echo ok"
   },
