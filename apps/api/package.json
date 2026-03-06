@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsx src/index.ts",
+    "build": "tsup src/index.ts --format esm --target node22",
+    "start": "node dist/index.mjs",
     "lint": "echo ok"
   },
   "dependencies": {
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.0.0"
   }
 }
