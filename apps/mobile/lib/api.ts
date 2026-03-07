@@ -133,15 +133,6 @@ export const signupApi = {
     }),
 };
 
-// ─── Signin ───
-export const signinApi = {
-  byUsername: (username: string) =>
-    apiFetch<SignupResult>("/api/signin", {
-      method: "POST",
-      body: JSON.stringify({ username }),
-    }),
-};
-
 // ─── Me (session-based) ───
 export const meApi = {
   get: () => apiFetch<SignupResult>("/api/me"),

@@ -33,27 +33,30 @@ app.post("/", async (c) => {
 
   // Create user via Better Auth (creates user + session)
   const email = `${cleanUsername}@garona.local`;
-  const randomPassword = nanoid(32);
+  const password = nanoid(32);
 
   const authResponse = await auth.api.signUpEmail({
     body: {
       name: name.trim(),
       email,
-      password: randomPassword,
+      password,
     },
     headers: c.req.raw.headers,
+    asResponse: true,
   });
 
-  if (!authResponse?.user) {
+  if (!authResponse.ok) {
     return c.json({ error: "Impossible de créer le compte" }, 500);
   }
+
+  const authData = await authResponse.json();
 
   // Update with username and avatar (Better Auth doesn't handle these)
   const avatarUrl = `https://i.pravatar.cc/150?u=${cleanUsername}`;
   await db
     .update(users)
     .set({ username: cleanUsername, avatarUrl })
-    .where(eq(users.id, authResponse.user.id));
+    .where(eq(users.id, authData.user.id));
 
   // If invite code provided, mark it as used
   if (inviteCode) {
@@ -64,20 +67,21 @@ app.post("/", async (c) => {
     if (invite && !invite.usedById) {
       await db
         .update(invites)
-        .set({ usedById: authResponse.user.id })
+        .set({ usedById: authData.user.id })
         .where(eq(invites.id, invite.id));
     }
   }
 
-  // Forward the session cookie from Better Auth's response
-  const setCookie = authResponse.headers?.get("set-cookie");
-  if (setCookie) {
-    c.header("set-cookie", setCookie);
-  }
+  // Forward session cookies from Better Auth
+  authResponse.headers.forEach((value, key) => {
+    if (key.toLowerCase() === "set-cookie") {
+      c.header("set-cookie", value, { append: true });
+    }
+  });
 
   return c.json(
     {
-      id: authResponse.user.id,
+      id: authData.user.id,
       name: name.trim(),
       username: cleanUsername,
       avatarUrl,

@@ -10,7 +10,6 @@ import profileRoutes from "./routes/profiles";
 import uploadRoutes from "./routes/upload";
 import activityRoutes from "./routes/activity";
 import signupRoutes from "./routes/signup";
-import signinRoutes from "./routes/signin";
 import meRoutes from "./routes/me";
 
 const app = new Hono();
@@ -34,7 +33,6 @@ app.use("/api/*", async (c, next) => {
   if (path.startsWith("/api/auth")) return next();
   if (path.match(/^\/api\/vouches\/invite\/[^/]+$/) && c.req.method === "GET") return next();
   if (path === "/api/signup" && c.req.method === "POST") return next();
-  if (path === "/api/signin" && c.req.method === "POST") return next();
 
   // Dev mode: X-Dev-User header maps to a seeded username
   const devUser = c.req.header("X-Dev-User");
@@ -69,7 +67,6 @@ app.route("/api/profiles", profileRoutes);
 app.route("/api/upload", uploadRoutes);
 app.route("/api/activity", activityRoutes);
 app.route("/api/signup", signupRoutes);
-app.route("/api/signin", signinRoutes);
 app.route("/api/me", meRoutes);
 
 // Health
