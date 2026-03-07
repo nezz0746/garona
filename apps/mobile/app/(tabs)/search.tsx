@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, FlatList, Image, StyleSheet, Dimensions, Pressable } from "react-native";
+import { View, Text, TextInput, FlatList, Image, Dimensions, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, EXPLORE_IMAGES } from "@garona/shared";
@@ -19,13 +19,13 @@ export default function SearchScreen() {
   const showResults = query.length >= 2;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.searchBar}>
+    <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center bg-surface rounded-xl mx-4 my-2 px-3 gap-2">
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
           placeholder="Chercher un Toulousain..."
           placeholderTextColor={colors.textMuted}
-          style={styles.input}
+          className="flex-1 py-2.5 text-sm text-text"
           value={query}
           onChangeText={setQuery}
           autoCapitalize="none"
@@ -43,19 +43,19 @@ export default function SearchScreen() {
           data={results}
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
-            <Pressable style={styles.resultRow}>
+            <Pressable className="flex-row items-center gap-3 px-4 py-2.5">
               <Avatar uri={item.avatarUrl} name={item.name} size={48} />
-              <View style={styles.resultInfo}>
-                <Text style={styles.resultName}>{item.name}</Text>
-                <Text style={styles.resultUsername}>@{item.username}</Text>
-                {item.bio && <Text style={styles.resultBio} numberOfLines={1}>{item.bio}</Text>}
+              <View className="flex-1">
+                <Text className="text-text font-semibold text-[15px]">{item.name}</Text>
+                <Text className="text-text-muted text-[13px]">@{item.username}</Text>
+                {item.bio && <Text className="text-text-secondary text-xs mt-0.5" numberOfLines={1}>{item.bio}</Text>}
               </View>
             </Pressable>
           )}
           ListEmptyComponent={() =>
             !searching ? (
-              <View style={styles.emptySearch}>
-                <Text style={styles.emptyText}>Aucun résultat pour "{query}"</Text>
+              <View className="p-10 items-center">
+                <Text className="text-text-muted text-sm">Aucun résultat pour "{query}"</Text>
               </View>
             ) : null
           }
@@ -77,33 +77,3 @@ export default function SearchScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    margin: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  input: { flex: 1, color: colors.text, fontSize: 15 },
-  resultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 12,
-  },
-  resultInfo: { flex: 1 },
-  resultName: { fontSize: 15, fontWeight: "600", color: colors.text },
-  resultUsername: { fontSize: 13, color: colors.textMuted },
-  resultBio: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  emptySearch: { padding: 40, alignItems: "center" },
-  emptyText: { color: colors.textMuted, fontSize: 14 },
-});

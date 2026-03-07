@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Pressable,
   ActivityIndicator,
   Modal,
@@ -68,16 +67,16 @@ export function SigninSheet({ visible, onClose, onSignedIn }: Props) {
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.handle} />
-          <Pressable onPress={onClose} style={styles.closeBtn}>
+      <View className="flex-1 bg-bg">
+        <View className="items-center py-3">
+          <View className="w-10 h-1 rounded-sm bg-border" />
+          <Pressable onPress={onClose} className="absolute right-4 top-3">
             <Ionicons name="close" size={24} color={colors.text} />
           </Pressable>
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.iconWrap}>
+        <View className="flex-1 px-8 items-center gap-4 pt-6">
+          <View className="w-[88px] h-[88px] rounded-[44px] bg-surface justify-center items-center">
             <Ionicons
               name="finger-print-outline"
               size={48}
@@ -85,33 +84,31 @@ export function SigninSheet({ visible, onClose, onSignedIn }: Props) {
             />
           </View>
 
-          <Text style={styles.title}>Connexion</Text>
+          <Text className="text-2xl font-extrabold text-text">Connexion</Text>
 
           {passkeyAvailable === false && (
-            <View style={styles.notice}>
+            <View className="flex-row items-center gap-1.5 bg-surface rounded-lg p-3 w-full">
               <Ionicons
                 name="information-circle-outline"
                 size={16}
                 color={colors.textMuted}
               />
-              <Text style={styles.noticeText}>
+              <Text className="text-text-muted text-[13px] flex-1">
                 Passkey non disponible sur cet appareil
               </Text>
             </View>
           )}
 
           {error && (
-            <View style={styles.errorRow}>
+            <View className="flex-row items-center gap-1.5 px-1">
               <Ionicons name="alert-circle" size={16} color="#ef4444" />
-              <Text style={styles.errorText}>{error}</Text>
+              <Text className="text-[#ef4444] text-[13px] flex-1">{error}</Text>
             </View>
           )}
 
           <Pressable
-            style={[
-              styles.signInBtn,
-              (loading || passkeyAvailable === false) && { opacity: 0.5 },
-            ]}
+            className="flex-row items-center justify-center gap-2.5 bg-primary rounded-xl py-4 w-full"
+            style={(loading || passkeyAvailable === false) ? { opacity: 0.5 } : undefined}
             onPress={handlePasskeySignIn}
             disabled={loading || passkeyAvailable === false}
           >
@@ -124,7 +121,7 @@ export function SigninSheet({ visible, onClose, onSignedIn }: Props) {
                   size={20}
                   color="#fff"
                 />
-                <Text style={styles.signInText}>Se connecter avec Passkey</Text>
+                <Text className="text-white text-[17px] font-bold">Se connecter avec Passkey</Text>
               </>
             )}
           </Pressable>
@@ -133,59 +130,3 @@ export function SigninSheet({ visible, onClose, onSignedIn }: Props) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: { alignItems: "center", paddingVertical: 12 },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-  },
-  closeBtn: { position: "absolute", right: 16, top: 12 },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
-    alignItems: "center",
-    gap: 16,
-    paddingTop: 24,
-  },
-  iconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: { fontSize: 24, fontWeight: "800", color: colors.text },
-  notice: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: 12,
-    width: "100%",
-  },
-  noticeText: { color: colors.textMuted, fontSize: 13, flex: 1 },
-  errorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 4,
-  },
-  errorText: { color: "#ef4444", fontSize: 13, flex: 1 },
-  signInBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    width: "100%",
-  },
-  signInText: { color: "#fff", fontSize: 17, fontWeight: "700" },
-});

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { View, Text, Image, StyleSheet, Dimensions, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Image, Dimensions, Pressable } from "react-native";
 import { colors, Post } from "@garona/shared";
 import { Avatar } from "./Avatar";
 import { IconButton } from "./IconButton";
@@ -19,12 +18,12 @@ export function PostCard({ post }: { post: Post }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="mb-2">
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable style={styles.headerLeft}>
+      <View className="flex-row items-center justify-between px-3 py-2.5">
+        <Pressable className="flex-row items-center gap-2.5">
           <Avatar uri={post.user.avatar} size={32} />
-          <Text style={styles.username}>{post.user.username}</Text>
+          <Text className="text-text font-semibold text-[13px]">{post.user.username}</Text>
         </Pressable>
         <IconButton name="ellipsis-horizontal" size={20} />
       </View>
@@ -32,13 +31,13 @@ export function PostCard({ post }: { post: Post }) {
       {/* Image */}
       <Image
         source={{ uri: post.image }}
-        style={[styles.image, { width: MAX_IMAGE_WIDTH, height: MAX_IMAGE_WIDTH }]}
+        style={{ width: MAX_IMAGE_WIDTH, height: MAX_IMAGE_WIDTH, alignSelf: "center" }}
         resizeMode="cover"
       />
 
       {/* Actions */}
-      <View style={styles.actions}>
-        <View style={styles.actionsLeft}>
+      <View className="flex-row justify-between items-center px-3 py-2">
+        <View className="flex-row gap-1">
           <IconButton
             name={liked ? "heart" : "heart-outline"}
             size={26}
@@ -55,33 +54,18 @@ export function PostCard({ post }: { post: Post }) {
       </View>
 
       {/* Info */}
-      <View style={styles.info}>
-        <Text style={styles.likesText}>{likes.toLocaleString()} likes</Text>
-        <Text style={styles.caption}>
-          <Text style={styles.username}>{post.user.username}</Text> {post.caption}
+      <View className="px-3.5 gap-1 pb-2">
+        <Text className="text-text font-semibold text-[13px]">{likes.toLocaleString()} likes</Text>
+        <Text className="text-text text-[13px] leading-[18px]">
+          <Text className="text-text font-semibold text-[13px]">{post.user.username}</Text> {post.caption}
         </Text>
         {post.comments > 0 && (
           <Pressable>
-            <Text style={styles.commentsLink}>View all {post.comments} comments</Text>
+            <Text className="text-primary text-[13px]">View all {post.comments} comments</Text>
           </Pressable>
         )}
-        <Text style={styles.timeAgo}>{post.timeAgo}</Text>
+        <Text className="text-text-muted text-[11px]">{post.timeAgo}</Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { marginBottom: 8 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 10 },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  username: { color: colors.text, fontWeight: "600", fontSize: 13 },
-  image: { alignSelf: "center" },
-  actions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8 },
-  actionsLeft: { flexDirection: "row", gap: 4 },
-  info: { paddingHorizontal: 14, gap: 4, paddingBottom: 8 },
-  likesText: { color: colors.text, fontWeight: "600", fontSize: 13 },
-  caption: { color: colors.text, fontSize: 13, lineHeight: 18 },
-  commentsLink: { color: colors.primary, fontSize: 13 },
-  timeAgo: { color: colors.textMuted, fontSize: 11 },
-});

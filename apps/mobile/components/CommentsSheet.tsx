@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import {
-  View, Text, StyleSheet, Modal, Pressable, FlatList,
+  View, Text, Modal, Pressable, FlatList,
   TextInput, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,45 +42,45 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <KeyboardAvoidingView
-        style={styles.container}
+        className="flex-1 bg-bg"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Commentaires</Text>
-          <Pressable onPress={onClose} style={styles.closeBtn}>
+        <View className="items-center py-3 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+          <View className="w-10 h-1 rounded-sm bg-border mb-2" />
+          <Text className="text-base font-bold text-text">Commentaires</Text>
+          <Pressable onPress={onClose} className="absolute right-4 top-4">
             <Ionicons name="close" size={24} color={colors.text} />
           </Pressable>
         </View>
 
         {/* Comments list */}
         {isLoading ? (
-          <View style={styles.center}>
+          <View className="flex-1 justify-center items-center gap-2">
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : comments.length === 0 ? (
-          <View style={styles.center}>
-            <Text style={styles.emptyText}>Aucun commentaire</Text>
-            <Text style={styles.emptyHint}>Sois le premier à commenter !</Text>
+          <View className="flex-1 justify-center items-center gap-2">
+            <Text className="text-base font-semibold text-text">Aucun commentaire</Text>
+            <Text className="text-sm text-text-muted">Sois le premier à commenter !</Text>
           </View>
         ) : (
           <FlatList
             data={comments}
             keyExtractor={(c) => c.id}
-            contentContainerStyle={styles.list}
+            contentContainerClassName="p-4 gap-4"
             renderItem={({ item }) => (
-              <View style={styles.comment}>
+              <View className="flex-row gap-2.5">
                 <Avatar uri={(item as any).author?.avatarUrl} name={(item as any).author?.username} size={32} />
-                <View style={styles.commentBody}>
-                  <Text style={styles.commentText}>
-                    <Text style={styles.commentAuthor}>
+                <View className="flex-1 gap-0.5">
+                  <Text className="text-text text-sm leading-5">
+                    <Text className="font-semibold">
                       {(item as any).author?.username || "utilisateur"}
                     </Text>{" "}
                     {item.text}
                   </Text>
-                  <Text style={styles.commentTime}>{timeAgo(item.createdAt)}</Text>
+                  <Text className="text-text-muted text-[11px]">{timeAgo(item.createdAt)}</Text>
                 </View>
               </View>
             )}
@@ -88,10 +88,10 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
         )}
 
         {/* Input */}
-        <View style={styles.inputBar}>
+        <View className="flex-row items-center px-4 py-2.5 border-t border-border pb-[30px] gap-2.5" style={{ borderTopWidth: 0.5 }}>
           <TextInput
             ref={inputRef}
-            style={styles.input}
+            className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
             placeholder="Ajouter un commentaire..."
             placeholderTextColor={colors.textMuted}
             value={text}
@@ -102,7 +102,8 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
           <Pressable
             onPress={handleSend}
             disabled={!text.trim() || commentMutation.isPending}
-            style={[styles.sendBtn, (!text.trim() || commentMutation.isPending) && { opacity: 0.4 }]}
+            className="p-2"
+            style={(!text.trim() || commentMutation.isPending) ? { opacity: 0.4 } : undefined}
           >
             {commentMutation.isPending ? (
               <ActivityIndicator size="small" color={colors.primary} />
@@ -115,49 +116,3 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: colors.border, marginBottom: 8,
-  },
-  title: { fontSize: 16, fontWeight: "700", color: colors.text },
-  closeBtn: { position: "absolute", right: 16, top: 16 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: "600", color: colors.text },
-  emptyHint: { fontSize: 14, color: colors.textMuted },
-  list: { padding: 16, gap: 16 },
-  comment: { flexDirection: "row", gap: 10 },
-  commentBody: { flex: 1, gap: 2 },
-  commentText: { color: colors.text, fontSize: 14, lineHeight: 20 },
-  commentAuthor: { fontWeight: "600" },
-  commentTime: { color: colors.textMuted, fontSize: 11 },
-  inputBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: colors.border,
-    paddingBottom: 30,
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.text,
-    maxHeight: 80,
-  },
-  sendBtn: { padding: 8 },
-});

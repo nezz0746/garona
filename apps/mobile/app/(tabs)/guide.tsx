@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
@@ -18,63 +18,63 @@ export default function GuideScreen() {
   const currentRang = user?.palier ?? 1;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 100 }}>
-      <Text style={styles.header}>Comment ça marche</Text>
+    <ScrollView className="flex-1 bg-bg px-5" contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 100 }}>
+      <Text className="text-[28px] font-extrabold text-text mb-6">Comment ça marche</Text>
 
       {/* Vouching section */}
-      <View style={styles.section}>
-        <View style={styles.sectionIcon}>
+      <View className="mb-7">
+        <View className="w-[52px] h-[52px] rounded-full bg-surface justify-center items-center mb-2.5">
           <Ionicons name="people-outline" size={28} color={colors.primary} />
         </View>
-        <Text style={styles.sectionTitle}>Le parrainage</Text>
-        <Text style={styles.sectionBody}>
+        <Text className="text-xl font-bold text-text mb-2">Le parrainage</Text>
+        <Text className="text-[15px] text-text-secondary leading-[22px]">
           Garona fonctionne sur la confiance. Quand quelqu'un te parraine, il met sa réputation en jeu pour toi.{"\n\n"}
           Plus tu reçois de parrainages de personnes de confiance, plus tu montes en rang — et plus tu peux faire de choses.
         </Text>
       </View>
 
       {/* QR section */}
-      <View style={styles.section}>
-        <View style={styles.sectionIcon}>
+      <View className="mb-7">
+        <View className="w-[52px] h-[52px] rounded-full bg-surface justify-center items-center mb-2.5">
           <Ionicons name="qr-code-outline" size={28} color={colors.primary} />
         </View>
-        <Text style={styles.sectionTitle}>Scanner un QR</Text>
-        <Text style={styles.sectionBody}>
+        <Text className="text-xl font-bold text-text mb-2">Scanner un QR</Text>
+        <Text className="text-[15px] text-text-secondary leading-[22px]">
           Pour parrainer quelqu'un, scanne son QR code depuis son profil. C'est instantané — pas de formulaire, pas de demande à accepter.
         </Text>
       </View>
 
       {/* Rang ladder */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Les rangs</Text>
-        <View style={styles.ladder}>
+      <View className="mb-7">
+        <Text className="text-xl font-bold text-text mb-2">Les rangs</Text>
+        <View className="gap-2.5">
           {RANGS.map((r) => {
             const isCurrent = r.rang === currentRang;
             const isLocked = r.rang > currentRang;
             return (
               <View
                 key={r.rang}
+                className="bg-surface rounded-xl p-3.5 border border-border"
                 style={[
-                  styles.rangCard,
                   isCurrent && { borderColor: r.color, borderWidth: 2 },
                   isLocked && { opacity: 0.5 },
                 ]}
               >
-                <View style={styles.rangHeader}>
-                  <Text style={styles.rangEmoji}>{r.emoji}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.rangName}>
+                <View className="flex-row items-center gap-2.5 mb-1">
+                  <Text className="text-2xl">{r.emoji}</Text>
+                  <View className="flex-1">
+                    <Text className="text-[15px] font-bold text-text">
                       Rang {r.rang} — {r.name}
                       {isCurrent ? " (toi)" : ""}
                     </Text>
-                    <Text style={styles.rangVouches}>
+                    <Text className="text-xs text-text-muted">
                       {r.vouches === 0 ? "Inscription" : `${r.vouches} parrainages`}
                     </Text>
                   </View>
                   {isLocked && <Ionicons name="lock-closed" size={16} color={colors.textMuted} />}
                   {isCurrent && <Ionicons name="checkmark-circle" size={20} color={r.color} />}
                 </View>
-                <Text style={styles.rangPerks}>{r.perks}</Text>
+                <Text className="text-[13px] text-text-secondary pl-[34px]">{r.perks}</Text>
               </View>
             );
           })}
@@ -82,12 +82,12 @@ export default function GuideScreen() {
       </View>
 
       {/* Weight explanation */}
-      <View style={styles.section}>
-        <View style={styles.sectionIcon}>
+      <View className="mb-7">
+        <View className="w-[52px] h-[52px] rounded-full bg-surface justify-center items-center mb-2.5">
           <Ionicons name="scale-outline" size={28} color={colors.primary} />
         </View>
-        <Text style={styles.sectionTitle}>Poids des parrainages</Text>
-        <Text style={styles.sectionBody}>
+        <Text className="text-xl font-bold text-text mb-2">Poids des parrainages</Text>
+        <Text className="text-[15px] text-text-secondary leading-[22px]">
           Tous les parrainages ne se valent pas. Un parrainage d'un Gardien (Rang 5) vaut bien plus qu'un parrainage d'un Membre (Rang 1).{"\n\n"}
           C'est ce qui rend le système résistant aux abus — il faut de la vraie confiance.
         </Text>
@@ -95,25 +95,3 @@ export default function GuideScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 20 },
-  header: { fontSize: 28, fontWeight: "800", color: colors.text, marginBottom: 24 },
-  section: { marginBottom: 28 },
-  sectionIcon: {
-    width: 52, height: 52, borderRadius: 26, backgroundColor: colors.surface,
-    justifyContent: "center", alignItems: "center", marginBottom: 10,
-  },
-  sectionTitle: { fontSize: 20, fontWeight: "700", color: colors.text, marginBottom: 8 },
-  sectionBody: { fontSize: 15, color: colors.textSecondary, lineHeight: 22 },
-  ladder: { gap: 10 },
-  rangCard: {
-    backgroundColor: colors.surface, borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: colors.border,
-  },
-  rangHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 },
-  rangEmoji: { fontSize: 24 },
-  rangName: { fontSize: 15, fontWeight: "700", color: colors.text },
-  rangVouches: { fontSize: 12, color: colors.textMuted },
-  rangPerks: { fontSize: 13, color: colors.textSecondary, paddingLeft: 34 },
-});

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, Linking, Platform } from "react-native";
+import { View, Text, Pressable, Linking, Platform } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
@@ -14,23 +14,23 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
   const [scanned, setScanned] = useState(false);
 
   if (!permission) {
-    return <View style={styles.container} />;
+    return <View className="flex-1 bg-black" />;
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <View style={styles.permissionBox}>
+      <View className="flex-1 bg-black">
+        <View className="flex-1 justify-center items-center px-10 bg-bg gap-4">
           <Ionicons name="camera-outline" size={48} color={colors.primary} />
-          <Text style={styles.permTitle}>Caméra requise</Text>
-          <Text style={styles.permDesc}>
+          <Text className="text-[22px] font-bold text-text">Caméra requise</Text>
+          <Text className="text-[15px] text-text-secondary text-center leading-[22px]">
             Pour scanner un QR code d'invitation, Garona a besoin d'accéder à ta caméra.
           </Text>
-          <Pressable style={styles.permBtn} onPress={requestPermission}>
-            <Text style={styles.permBtnText}>Autoriser la caméra</Text>
+          <Pressable className="bg-primary px-8 py-3.5 rounded-xl mt-2" onPress={requestPermission}>
+            <Text className="text-white text-base font-semibold">Autoriser la caméra</Text>
           </Pressable>
           <Pressable onPress={onClose}>
-            <Text style={styles.cancelText}>Annuler</Text>
+            <Text className="text-text-muted text-[15px] mt-2">Annuler</Text>
           </Pressable>
         </View>
       </View>
@@ -51,52 +51,52 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-black">
       <CameraView
-        style={styles.camera}
+        className="flex-1"
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
       >
         {/* Overlay */}
-        <View style={styles.overlay}>
+        <View className="flex-1" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
           {/* Header */}
-          <View style={styles.header}>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
+          <View className="flex-row items-center justify-between px-4" style={{ paddingTop: 60 }}>
+            <Pressable onPress={onClose} className="p-1">
               <Ionicons name="close" size={28} color="#fff" />
             </Pressable>
-            <Text style={styles.headerTitle}>Scanner l'invitation</Text>
+            <Text className="text-white text-lg font-semibold">Scanner l'invitation</Text>
             <View style={{ width: 36 }} />
           </View>
 
           {/* Scanner frame */}
-          <View style={styles.frameContainer}>
-            <View style={styles.frame}>
+          <View className="flex-1 justify-center items-center">
+            <View style={{ width: FRAME_SIZE, height: FRAME_SIZE, borderRadius: 16, backgroundColor: "transparent" }}>
               {/* Corner decorations */}
-              <View style={[styles.corner, styles.topLeft]} />
-              <View style={[styles.corner, styles.topRight]} />
-              <View style={[styles.corner, styles.bottomLeft]} />
-              <View style={[styles.corner, styles.bottomRight]} />
+              <View style={[cornerBase, { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 16 }]} />
+              <View style={[cornerBase, { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 16 }]} />
+              <View style={[cornerBase, { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 16 }]} />
+              <View style={[cornerBase, { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 16 }]} />
             </View>
           </View>
 
           {/* Instructions */}
-          <View style={styles.instructions}>
-            <Text style={styles.instructionText}>
+          <View className="items-center py-6">
+            <Text className="text-white text-[15px] text-center" style={{ opacity: 0.9 }}>
               Pointe ta caméra vers le QR code d'invitation
             </Text>
           </View>
 
           {/* Manual input */}
           <Pressable
-            style={styles.manualBtn}
+            className="flex-row items-center justify-center gap-2 pb-12"
             onPress={() => {
               onClose();
               // Could open a text input modal instead
             }}
           >
             <Ionicons name="link-outline" size={18} color="#fff" />
-            <Text style={styles.manualText}>J'ai un lien à la place</Text>
+            <Text className="text-white text-sm underline" style={{ opacity: 0.7 }}>J'ai un lien à la place</Text>
           </Pressable>
         </View>
       </CameraView>
@@ -106,135 +106,9 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
 
 const FRAME_SIZE = 250;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 60,
-    paddingHorizontal: 16,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  frameContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  frame: {
-    width: FRAME_SIZE,
-    height: FRAME_SIZE,
-    borderRadius: 16,
-    backgroundColor: "transparent",
-  },
-  corner: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderColor: colors.primary,
-  },
-  topLeft: {
-    top: 0,
-    left: 0,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderTopLeftRadius: 16,
-  },
-  topRight: {
-    top: 0,
-    right: 0,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderTopRightRadius: 16,
-  },
-  bottomLeft: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderBottomLeftRadius: 16,
-  },
-  bottomRight: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderBottomRightRadius: 16,
-  },
-  instructions: {
-    alignItems: "center",
-    paddingVertical: 24,
-  },
-  instructionText: {
-    color: "#fff",
-    fontSize: 15,
-    textAlign: "center",
-    opacity: 0.9,
-  },
-  manualBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingBottom: 48,
-  },
-  manualText: {
-    color: "#fff",
-    fontSize: 14,
-    opacity: 0.7,
-    textDecorationLine: "underline",
-  },
-  permissionBox: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 40,
-    backgroundColor: colors.bg,
-    gap: 16,
-  },
-  permTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  permDesc: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  permBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  permBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  cancelText: {
-    color: colors.textMuted,
-    fontSize: 15,
-    marginTop: 8,
-  },
-});
+const cornerBase = {
+  position: "absolute" as const,
+  width: 30,
+  height: 30,
+  borderColor: colors.primary,
+};

@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  StyleSheet,
   Modal,
   Pressable,
   Share,
@@ -56,23 +55,32 @@ export function ProfileShareSheet({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <View className="flex-1 bg-bg items-center pt-3">
         {/* Handle + close */}
-        <View style={styles.header}>
-          <View style={styles.handle} />
-          <Pressable onPress={onClose} style={styles.closeBtn}>
+        <View className="w-full items-center pb-2">
+          <View className="w-10 h-1 rounded-sm bg-border" />
+          <Pressable onPress={onClose} className="absolute right-4 top-0">
             <Ionicons name="close" size={24} color={colors.text} />
           </Pressable>
         </View>
 
         {/* Profile card */}
-        <View style={styles.card}>
+        <View className="items-center py-8 px-6 gap-2">
           <Avatar uri={avatarUrl} name={name} size={64} />
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.username}>@{username}</Text>
+          <Text className="text-xl font-bold text-text mt-2">{name}</Text>
+          <Text className="text-[15px] text-text-muted">@{username}</Text>
 
           {/* QR Code */}
-          <View style={styles.qrWrap}>
+          <View
+            className="mt-6 p-4 bg-white rounded-2xl"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            }}
+          >
             <QRCode
               value={profileUrl}
               size={200}
@@ -81,82 +89,22 @@ export function ProfileShareSheet({
             />
           </View>
 
-          <Text style={styles.hint}>Scanne ce code pour voir mon profil</Text>
+          <Text className="text-[13px] text-text-muted mt-4">Scanne ce code pour voir mon profil</Text>
         </View>
 
         {/* Actions */}
-        <View style={styles.actions}>
-          <Pressable style={styles.actionBtn} onPress={handleShare}>
+        <View className="flex-row gap-3 px-6 w-full">
+          <Pressable className="flex-1 flex-row items-center justify-center gap-2 bg-surface border border-border rounded-xl py-3.5" onPress={handleShare}>
             <Ionicons name="share-outline" size={22} color={colors.primary} />
-            <Text style={styles.actionText}>Partager</Text>
+            <Text className="text-primary font-semibold text-[15px]">Partager</Text>
           </Pressable>
 
-          <Pressable style={styles.actionBtn} onPress={handleCopy}>
+          <Pressable className="flex-1 flex-row items-center justify-center gap-2 bg-surface border border-border rounded-xl py-3.5" onPress={handleCopy}>
             <Ionicons name="copy-outline" size={22} color={colors.primary} />
-            <Text style={styles.actionText}>Copier le lien</Text>
+            <Text className="text-primary font-semibold text-[15px]">Copier le lien</Text>
           </Pressable>
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: "center",
-    paddingTop: 12,
-  },
-  header: {
-    width: "100%",
-    alignItems: "center",
-    paddingBottom: 8,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-  },
-  closeBtn: { position: "absolute", right: 16, top: 0 },
-  card: {
-    alignItems: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    gap: 8,
-  },
-  name: { fontSize: 20, fontWeight: "700", color: colors.text, marginTop: 8 },
-  username: { fontSize: 15, color: colors.textMuted },
-  qrWrap: {
-    marginTop: 24,
-    padding: 16,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  hint: { fontSize: 13, color: colors.textMuted, marginTop: 16 },
-  actions: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 24,
-    width: "100%",
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  actionText: { color: colors.primary, fontWeight: "600", fontSize: 15 },
-});

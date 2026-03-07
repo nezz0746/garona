@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import {
-  View, Text, StyleSheet, FlatList, Dimensions, Pressable,
+  View, Text, FlatList, Dimensions, Pressable,
   NativeSyntheticEvent, NativeScrollEvent, ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -73,7 +73,7 @@ export function OnboardingCarousel({ onFinish, onSignIn, signingIn }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-bg">
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -84,50 +84,50 @@ export function OnboardingCarousel({ onFinish, onSignIn, signingIn }: Props) {
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <View style={styles.slide}>
-            <View style={styles.iconWrap}>
+          <View className="flex-1 justify-center items-center px-10" style={{ width }}>
+            <View className="w-[120px] h-[120px] rounded-full bg-primary-light justify-center items-center mb-8">
               <Ionicons name={item.icon} size={64} color={colors.primary} />
             </View>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
-            <Text style={styles.description}>{item.description}</Text>
+            <Text className="text-[32px] font-extrabold text-text mb-2 text-center">{item.title}</Text>
+            <Text className="text-base font-semibold text-primary mb-5 text-center">{item.subtitle}</Text>
+            <Text className="text-[15px] text-text-secondary text-center leading-6">{item.description}</Text>
           </View>
         )}
       />
 
       {/* Dots */}
-      <View style={styles.dots}>
+      <View className="flex-row justify-center gap-2 pb-6">
         {SLIDES.map((_, i) => (
-          <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
+          <View key={i} className={`w-2 h-2 rounded-full bg-border ${i === activeIndex ? "bg-primary w-6" : ""}`} />
         ))}
       </View>
 
       {/* Bottom buttons */}
-      <View style={styles.bottom}>
+      <View className="px-6 pb-12">
         {activeIndex < SLIDES.length - 1 ? (
           <>
             <Pressable onPress={onFinish}>
-              <Text style={styles.skipText}>Passer</Text>
+              <Text className="text-text-muted text-base">Passer</Text>
             </Pressable>
-            <Pressable style={styles.nextBtn} onPress={goNext}>
-              <Text style={styles.nextText}>Suivant</Text>
+            <Pressable className="flex-row items-center gap-2 bg-primary px-6 py-3.5 rounded-xl" onPress={goNext}>
+              <Text className="text-white text-base font-semibold">Suivant</Text>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </Pressable>
           </>
         ) : (
-          <View style={styles.lastSlideButtons}>
-            <Pressable style={[styles.nextBtn, styles.startBtn]} onPress={onFinish}>
+          <View className="gap-3">
+            <Pressable className="flex-row items-center gap-2 bg-primary px-6 py-3.5 rounded-xl justify-center" onPress={onFinish}>
               <Ionicons name="qr-code-outline" size={20} color="#fff" />
-              <Text style={styles.nextText}>Scanner une invitation</Text>
+              <Text className="text-white text-base font-semibold">Scanner une invitation</Text>
             </Pressable>
 
-            <Pressable style={styles.signInBtn} onPress={onSignIn} disabled={signingIn}>
+            <Pressable className="flex-row items-center justify-center gap-2 bg-surface border border-border py-3.5 rounded-xl" onPress={onSignIn} disabled={signingIn}>
               {signingIn ? (
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <>
                   <Ionicons name="finger-print-outline" size={20} color={colors.primary} />
-                  <Text style={styles.signInText}>J'ai déjà un compte</Text>
+                  <Text className="text-primary text-base font-semibold">J'ai déjà un compte</Text>
                 </>
               )}
             </Pressable>
@@ -138,46 +138,3 @@ export function OnboardingCarousel({ onFinish, onSignIn, signingIn }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  slide: {
-    width,
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 40,
-  },
-  iconWrap: {
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: colors.primaryLight,
-    justifyContent: "center", alignItems: "center",
-    marginBottom: 32,
-  },
-  title: { fontSize: 32, fontWeight: "800", color: colors.text, marginBottom: 8, textAlign: "center" },
-  subtitle: { fontSize: 16, fontWeight: "600", color: colors.primary, marginBottom: 20, textAlign: "center" },
-  description: { fontSize: 15, color: colors.textSecondary, textAlign: "center", lineHeight: 24 },
-  dots: { flexDirection: "row", justifyContent: "center", gap: 8, paddingBottom: 24 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
-  dotActive: { backgroundColor: colors.primary, width: 24 },
-  bottom: {
-    paddingHorizontal: 24,
-    paddingBottom: 48,
-  },
-  skipText: { color: colors.textMuted, fontSize: 16 },
-  nextBtn: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12,
-  },
-  startBtn: { justifyContent: "center" },
-  nextText: { color: "#ffffff", fontSize: 16, fontWeight: "600" },
-  lastSlideButtons: { gap: 12 },
-  signInBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.border,
-    paddingVertical: 14, borderRadius: 12,
-  },
-  signInText: { color: colors.primary, fontSize: 16, fontWeight: "600" },
-});

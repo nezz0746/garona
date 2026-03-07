@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, Pressable, Share, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Share, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
 import { vouchesApi } from "../lib/api";
@@ -37,9 +37,9 @@ export function InviteGenerator({ palier }: Props) {
 
   if (!canInvite) {
     return (
-      <View style={styles.locked}>
+      <View className="flex-row items-center justify-center gap-2 p-4 bg-surface rounded-xl m-4">
         <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} />
-        <Text style={styles.lockedText}>
+        <Text className="text-text-muted text-[13px]">
           Palier 4 (Ambassadeur) requis pour inviter
         </Text>
       </View>
@@ -47,144 +47,42 @@ export function InviteGenerator({ palier }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <View className="p-4">
       {!invite ? (
-        <Pressable style={styles.generateBtn} onPress={generateInvite} disabled={loading}>
+        <Pressable className="flex-row items-center justify-center gap-2 bg-primary py-3.5 rounded-xl" onPress={generateInvite} disabled={loading}>
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
               <Ionicons name="qr-code-outline" size={20} color="#fff" />
-              <Text style={styles.generateText}>Générer une invitation</Text>
+              <Text className="text-white text-base font-semibold">Générer une invitation</Text>
             </>
           )}
         </Pressable>
       ) : (
-        <View style={styles.inviteCard}>
-          <View style={styles.codeRow}>
-            <Text style={styles.codeLabel}>Code d'invitation</Text>
-            <Text style={styles.code}>{invite.code}</Text>
+        <View className="bg-card border border-border rounded-xl p-4 gap-3">
+          <View className="items-center gap-1">
+            <Text className="text-text-muted text-xs">Code d'invitation</Text>
+            <Text className="text-xl font-bold text-text tracking-wider">{invite.code}</Text>
           </View>
 
-          <View style={styles.actions}>
-            <Pressable style={styles.shareBtn} onPress={shareInvite}>
+          <View className="flex-row gap-2">
+            <Pressable className="flex-1 flex-row items-center justify-center gap-1.5 bg-primary py-2.5 rounded-lg" onPress={shareInvite}>
               <Ionicons name="share-outline" size={18} color="#fff" />
-              <Text style={styles.shareText}>Partager</Text>
+              <Text className="text-white font-semibold text-sm">Partager</Text>
             </Pressable>
-            <Pressable style={styles.newBtn} onPress={() => { setInvite(null); generateInvite(); }}>
+            <Pressable className="flex-row items-center justify-center gap-1.5 py-2.5 px-4 rounded-lg border border-primary" onPress={() => { setInvite(null); generateInvite(); }}>
               <Ionicons name="refresh-outline" size={18} color={colors.primary} />
-              <Text style={styles.newText}>Nouveau</Text>
+              <Text className="text-primary font-semibold text-sm">Nouveau</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.hint}>
+          <Text className="text-text-muted text-xs text-center">
             Valable 7 jours • Usage unique
           </Text>
         </View>
       )}
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text className="text-[#ef4444] text-center mt-2 text-[13px]">{error}</Text>}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  generateBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  generateText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  inviteCard: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
-  },
-  codeRow: {
-    alignItems: "center",
-    gap: 4,
-  },
-  codeLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  code: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: 1,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  shareBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  shareText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  newBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  newText: {
-    color: colors.primary,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  hint: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textAlign: "center",
-  },
-  locked: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    margin: 16,
-  },
-  lockedText: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  error: {
-    color: "#ef4444",
-    textAlign: "center",
-    marginTop: 8,
-    fontSize: 13,
-  },
-});

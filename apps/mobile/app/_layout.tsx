@@ -88,7 +88,7 @@ export default function RootLayout() {
   // Loading — checking session
   if (appState === "loading") {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: "center", alignItems: "center" }}>
+      <View className="flex-1 bg-bg justify-center items-center">
         <StatusBar style="dark" />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
@@ -98,7 +98,7 @@ export default function RootLayout() {
   // Launch screen
   if (appState === "launch") {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View className="flex-1 bg-bg">
         <StatusBar style="dark" />
         <LaunchScreen
           onSignUp={() => setAppState("signup")}
@@ -112,17 +112,9 @@ export default function RootLayout() {
         {__DEV__ && (
           <Pressable
             onPress={devSkip}
-            style={{
-              position: "absolute",
-              top: 60,
-              right: 20,
-              backgroundColor: "#333",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 6,
-            }}
+            className="absolute top-[60px] right-5 bg-[#333] px-3 py-1.5 rounded-md"
           >
-            <Text style={{ color: "#fff", fontSize: 12 }}>⚡ Dev</Text>
+            <Text className="text-white text-xs">⚡ Dev</Text>
           </Pressable>
         )}
       </View>
@@ -132,7 +124,7 @@ export default function RootLayout() {
   // Sign up form
   if (appState === "signup") {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View className="flex-1 bg-bg">
         <StatusBar style="dark" />
         <SignupForm
           onSignedUp={handleSignedUp}
@@ -145,7 +137,7 @@ export default function RootLayout() {
   // Post-signup tutorial
   if (appState === "tutorial") {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View className="flex-1 bg-bg">
         <StatusBar style="dark" />
         <TutorialSlides
           userName={user?.name || ""}
@@ -168,7 +160,7 @@ export default function RootLayout() {
           signOut,
         }}
       >
-        <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <View className="flex-1 bg-bg">
           <StatusBar style="dark" />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="(tabs)" />

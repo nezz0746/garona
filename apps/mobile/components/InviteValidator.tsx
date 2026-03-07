@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Image } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
 import { API_URL } from "../lib/auth";
@@ -36,161 +36,63 @@ export function InviteValidator({ code, onAccept, onBack }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View className="flex-1 bg-bg justify-center items-center px-8 gap-4">
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Vérification de l'invitation...</Text>
+        <Text className="text-text-secondary text-[15px] mt-4">Vérification de l'invitation...</Text>
       </View>
     );
   }
 
   if (!invite?.valid) {
     return (
-      <View style={styles.container}>
-        <View style={styles.iconWrap}>
+      <View className="flex-1 bg-bg justify-center items-center px-8 gap-4">
+        <View className="w-[100px] h-[100px] rounded-full bg-[#fef2f2] justify-center items-center mb-2">
           <Ionicons name="close-circle-outline" size={64} color="#ef4444" />
         </View>
-        <Text style={styles.title}>Invitation invalide</Text>
-        <Text style={styles.desc}>
+        <Text className="text-[26px] font-extrabold text-text">Invitation invalide</Text>
+        <Text className="text-sm text-text-secondary text-center leading-[22px] px-2">
           {invite?.error === "Already used" && "Cette invitation a déjà été utilisée."}
           {invite?.error === "Expired" && "Cette invitation a expiré."}
           {invite?.error === "Invalid code" && "Ce code d'invitation n'existe pas."}
           {!invite?.error && "Impossible de vérifier cette invitation."}
         </Text>
-        <Pressable style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backText}>Réessayer</Text>
+        <Pressable className="px-8 py-3.5 rounded-xl border border-border mt-2" onPress={onBack}>
+          <Text className="text-text text-base font-semibold">Réessayer</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.iconWrap, { backgroundColor: colors.primaryLight }]}>
+    <View className="flex-1 bg-bg justify-center items-center px-8 gap-4">
+      <View className="w-[100px] h-[100px] rounded-full bg-[#fef2f2] justify-center items-center mb-2" style={{ backgroundColor: colors.primaryLight }}>
         <Ionicons name="checkmark-circle-outline" size={64} color={colors.primary} />
       </View>
 
-      <Text style={styles.title}>Tu es invité !</Text>
+      <Text className="text-[26px] font-extrabold text-text">Tu es invité !</Text>
 
       {invite.creator && (
-        <View style={styles.creatorCard}>
-          <Image source={{ uri: invite.creator.avatarUrl }} style={styles.avatar} />
+        <View className="flex-row items-center gap-3 bg-card border border-border rounded-xl p-4 w-full">
+          <Image source={{ uri: invite.creator.avatarUrl }} className="w-12 h-12 rounded-full" />
           <View>
-            <Text style={styles.creatorName}>{invite.creator.name}</Text>
-            <Text style={styles.creatorUsername}>@{invite.creator.username} t'invite sur Garona</Text>
+            <Text className="text-base font-semibold text-text">{invite.creator.name}</Text>
+            <Text className="text-[13px] text-text-muted mt-0.5">@{invite.creator.username} t'invite sur Garona</Text>
           </View>
         </View>
       )}
 
-      <Text style={styles.desc}>
+      <Text className="text-sm text-text-secondary text-center leading-[22px] px-2">
         En rejoignant, tu commences en tant qu'Observateur. Demande à tes connaissances de te parrainer pour débloquer plus de fonctionnalités.
       </Text>
 
-      <Pressable style={styles.acceptBtn} onPress={() => onAccept(code)}>
+      <Pressable className="flex-row items-center gap-2 bg-primary px-8 py-4 rounded-xl mt-2 w-full justify-center" onPress={() => onAccept(code)}>
         <Ionicons name="log-in-outline" size={20} color="#fff" />
-        <Text style={styles.acceptText}>Rejoindre Garona</Text>
+        <Text className="text-white text-[17px] font-semibold">Rejoindre Garona</Text>
       </Pressable>
 
       <Pressable onPress={onBack}>
-        <Text style={styles.cancelText}>Annuler</Text>
+        <Text className="text-text-muted text-[15px] mt-1">Annuler</Text>
       </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-    gap: 16,
-  },
-  iconWrap: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#fef2f2",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  desc: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-    paddingHorizontal: 8,
-  },
-  creatorCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 16,
-    width: "100%",
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  creatorName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  creatorUsername: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  acceptBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 8,
-    width: "100%",
-    justifyContent: "center",
-  },
-  acceptText: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  backBtn: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 8,
-  },
-  backText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  cancelText: {
-    color: colors.textMuted,
-    fontSize: 15,
-    marginTop: 4,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-    marginTop: 16,
-  },
-});

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  View, Text, StyleSheet, Pressable, TextInput, Image, ActivityIndicator,
+  View, Text, Pressable, TextInput, Image, ActivityIndicator,
   Alert, FlatList, Dimensions, ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -126,12 +126,12 @@ export default function CreateScreen() {
 
   if (!canPost) {
     return (
-      <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
-        <View style={styles.lockedIcon}>
+      <View className="flex-1 bg-bg justify-center items-center p-8" style={{ paddingTop: insets.top }}>
+        <View className="w-[100px] h-[100px] rounded-full bg-surface justify-center items-center mb-4">
           <Ionicons name="lock-closed-outline" size={48} color={colors.textMuted} />
         </View>
-        <Text style={styles.lockedTitle}>Palier 2 requis</Text>
-        <Text style={styles.lockedDesc}>
+        <Text className="text-xl font-bold text-text">Palier 2 requis</Text>
+        <Text className="text-sm text-text-muted text-center leading-[22px] mt-2">
           Tu dois être au moins Habitant (3 parrainages) pour publier des photos.
         </Text>
       </View>
@@ -139,13 +139,13 @@ export default function CreateScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
         <Pressable onPress={() => { setSelected([]); setCaption(""); setShowCaption(false); }}>
           <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>Nouvelle publication</Text>
+        <Text className="text-lg font-bold text-text">Nouvelle publication</Text>
         <Pressable
           onPress={showCaption ? handlePost : () => setShowCaption(true)}
           disabled={selected.length === 0 || uploading}
@@ -154,20 +154,21 @@ export default function CreateScreen() {
           {uploading ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text style={styles.nextText}>{showCaption ? "Partager" : "Suivant"}</Text>
+            <Text className="text-primary font-bold text-base">{showCaption ? "Partager" : "Suivant"}</Text>
           )}
         </Pressable>
       </View>
 
       {showCaption ? (
         /* Caption step */
-        <ScrollView contentContainerStyle={styles.captionStep}>
-          <View style={styles.captionRow}>
+        <ScrollView contentContainerClassName="p-4 gap-4">
+          <View className="flex-row gap-3">
             {selected.length > 0 && (
-              <Image source={{ uri: selected[0] }} style={styles.captionThumb} />
+              <Image source={{ uri: selected[0] }} className="w-16 h-16 rounded-lg" />
             )}
             <TextInput
-              style={styles.captionInput}
+              className="flex-1 text-text text-[15px] leading-[22px] min-h-[80px]"
+              style={{ textAlignVertical: "top" }}
               placeholder="Écris une légende..."
               placeholderTextColor={colors.textMuted}
               value={caption}
@@ -178,9 +179,9 @@ export default function CreateScreen() {
             />
           </View>
           {selected.length > 1 && (
-            <ScrollView horizontal style={styles.captionPreviewRow} showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal className="mt-2" showsHorizontalScrollIndicator={false}>
               {selected.map((uri, i) => (
-                <Image key={i} source={{ uri }} style={styles.captionPreviewThumb} />
+                <Image key={i} source={{ uri }} className="w-20 h-20 rounded-lg mr-2" />
               ))}
             </ScrollView>
           )}
@@ -189,26 +190,26 @@ export default function CreateScreen() {
         /* Gallery picker step */
         <>
           {/* Preview */}
-          <View style={styles.preview}>
+          <View style={{ width: SCREEN_W, height: SCREEN_W * 0.6, backgroundColor: "#000" }}>
             {selected.length > 0 ? (
               <>
-                <Image source={{ uri: selected[previewIndex] || selected[0] }} style={styles.previewImage} resizeMode="cover" />
+                <Image source={{ uri: selected[previewIndex] || selected[0] }} className="w-full h-full" resizeMode="cover" />
                 {selected.length > 1 && (
-                  <View style={styles.previewCounter}>
-                    <Text style={styles.previewCounterText}>{previewIndex + 1}/{selected.length}</Text>
+                  <View className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 rounded-xl">
+                    <Text className="text-white text-xs font-semibold">{previewIndex + 1}/{selected.length}</Text>
                   </View>
                 )}
                 {/* Swipe through selected */}
                 {selected.length > 1 && (
-                  <View style={styles.previewNav}>
+                  <View className="absolute inset-0 flex-row items-center px-2">
                     {previewIndex > 0 && (
-                      <Pressable style={styles.previewNavBtn} onPress={() => setPreviewIndex(previewIndex - 1)}>
+                      <Pressable className="bg-black/40 w-8 h-8 rounded-full justify-center items-center" onPress={() => setPreviewIndex(previewIndex - 1)}>
                         <Ionicons name="chevron-back" size={20} color="#fff" />
                       </Pressable>
                     )}
-                    <View style={{ flex: 1 }} />
+                    <View className="flex-1" />
                     {previewIndex < selected.length - 1 && (
-                      <Pressable style={styles.previewNavBtn} onPress={() => setPreviewIndex(previewIndex + 1)}>
+                      <Pressable className="bg-black/40 w-8 h-8 rounded-full justify-center items-center" onPress={() => setPreviewIndex(previewIndex + 1)}>
                         <Ionicons name="chevron-forward" size={20} color="#fff" />
                       </Pressable>
                     )}
@@ -216,24 +217,24 @@ export default function CreateScreen() {
                 )}
               </>
             ) : (
-              <View style={[styles.previewImage, styles.previewEmpty]}>
+              <View className="w-full h-full justify-center items-center bg-surface">
                 <Ionicons name="images-outline" size={48} color={colors.textMuted} />
-                <Text style={{ color: colors.textMuted, marginTop: 8 }}>Sélectionne des photos</Text>
+                <Text className="text-text-muted mt-2">Sélectionne des photos</Text>
               </View>
             )}
           </View>
 
           {/* Gallery header */}
-          <View style={styles.galleryHeader}>
-            <Text style={styles.galleryTitle}>
+          <View className="flex-row justify-between items-center px-4 py-2.5">
+            <Text className="text-[15px] font-semibold text-text">
               Galerie{selected.length > 0 ? ` (${selected.length})` : ""}
             </Text>
-            <View style={styles.galleryActions}>
-              <Pressable style={styles.multiBtn}>
+            <View className="flex-row gap-2.5 items-center">
+              <Pressable className="flex-row items-center gap-1 bg-surface rounded-2xl px-3 py-1.5">
                 <Ionicons name="copy-outline" size={18} color={colors.primary} />
-                <Text style={styles.multiBtnText}>Multi</Text>
+                <Text className="text-primary font-semibold text-[13px]">Multi</Text>
               </Pressable>
-              <Pressable style={styles.cameraBtn} onPress={takePhoto}>
+              <Pressable className="bg-primary w-8 h-8 rounded-full justify-center items-center" onPress={takePhoto}>
                 <Ionicons name="camera-outline" size={20} color="#fff" />
               </Pressable>
             </View>
@@ -251,19 +252,19 @@ export default function CreateScreen() {
               const isSelected = idx !== -1;
               return (
                 <Pressable onPress={() => toggleSelect(item.uri)}>
-                  <Image source={{ uri: item.uri }} style={styles.galleryTile} />
+                  <Image source={{ uri: item.uri }} style={{ width: GALLERY_TILE, height: GALLERY_TILE }} />
                   {isSelected && (
-                    <View style={styles.selectedBadge}>
-                      <Text style={styles.selectedBadgeText}>{idx + 1}</Text>
+                    <View className="absolute top-1.5 right-1.5 bg-primary w-[22px] h-[22px] rounded-full justify-center items-center border-2 border-white">
+                      <Text className="text-white text-[11px] font-bold">{idx + 1}</Text>
                     </View>
                   )}
-                  {isSelected && <View style={styles.selectedOverlay} />}
+                  {isSelected && <View className="absolute inset-0 bg-[rgba(233,30,99,0.2)]" />}
                 </Pressable>
               );
             }}
             ListEmptyComponent={() => (
-              <View style={styles.center}>
-                <Text style={{ color: colors.textMuted }}>
+              <View className="flex-1 justify-center items-center p-8">
+                <Text className="text-text-muted">
                   {hasPermission ? "Aucune photo trouvée" : "Autorisation requise pour accéder à la galerie"}
                 </Text>
               </View>
@@ -274,83 +275,3 @@ export default function CreateScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
-  },
-  title: { fontSize: 16, fontWeight: "700", color: colors.text },
-  nextText: { color: colors.primary, fontWeight: "700", fontSize: 16 },
-  // Preview
-  preview: { width: SCREEN_W, height: SCREEN_W * 0.6, backgroundColor: "#000" },
-  previewImage: { width: "100%", height: "100%" },
-  previewEmpty: { justifyContent: "center", alignItems: "center", backgroundColor: colors.surface },
-  previewCounter: {
-    position: "absolute", top: 12, right: 12,
-    backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
-  },
-  previewCounterText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  previewNav: {
-    position: "absolute", top: 0, bottom: 0, left: 0, right: 0,
-    flexDirection: "row", alignItems: "center", paddingHorizontal: 8,
-  },
-  previewNavBtn: {
-    backgroundColor: "rgba(0,0,0,0.4)", width: 32, height: 32, borderRadius: 16,
-    justifyContent: "center", alignItems: "center",
-  },
-  // Gallery header
-  galleryHeader: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 10,
-  },
-  galleryTitle: { fontSize: 15, fontWeight: "600", color: colors.text },
-  galleryActions: { flexDirection: "row", gap: 10, alignItems: "center" },
-  multiBtn: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: colors.surface, borderRadius: 16,
-    paddingHorizontal: 12, paddingVertical: 6,
-  },
-  multiBtnText: { color: colors.primary, fontWeight: "600", fontSize: 13 },
-  cameraBtn: {
-    backgroundColor: colors.primary, width: 32, height: 32, borderRadius: 16,
-    justifyContent: "center", alignItems: "center",
-  },
-  // Gallery grid
-  galleryTile: { width: GALLERY_TILE, height: GALLERY_TILE },
-  selectedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(233,30,99,0.2)",
-  },
-  selectedBadge: {
-    position: "absolute", top: 6, right: 6,
-    backgroundColor: colors.primary, width: 22, height: 22, borderRadius: 11,
-    justifyContent: "center", alignItems: "center",
-    borderWidth: 2, borderColor: "#fff",
-  },
-  selectedBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  // Caption step
-  captionStep: { padding: 16, gap: 16 },
-  captionRow: { flexDirection: "row", gap: 12 },
-  captionThumb: { width: 64, height: 64, borderRadius: 8 },
-  captionInput: {
-    flex: 1, color: colors.text, fontSize: 15, lineHeight: 22,
-    textAlignVertical: "top", minHeight: 80,
-  },
-  captionPreviewRow: { marginTop: 8 },
-  captionPreviewThumb: { width: 80, height: 80, borderRadius: 8, marginRight: 8 },
-  // Locked
-  lockedIcon: {
-    width: 100, height: 100, borderRadius: 50, backgroundColor: colors.surface,
-    justifyContent: "center", alignItems: "center", marginBottom: 16,
-  },
-  lockedTitle: { fontSize: 20, fontWeight: "700", color: colors.text },
-  lockedDesc: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 22, marginTop: 8 },
-});

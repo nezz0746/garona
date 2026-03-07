@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View, Text } from "react-native";
+import { Image, View, Text } from "react-native";
 import { colors } from "@garona/shared";
 
 const AVATAR_COLORS = [
@@ -69,15 +69,13 @@ export function Avatar({ uri, name, size = 32, ring = false, seen = false }: Pro
 
   return ring ? (
     <View
-      style={[
-        styles.ring,
-        {
-          width: outer,
-          height: outer,
-          borderRadius: outer / 2,
-          borderColor: seen ? colors.border : colors.primary,
-        },
-      ]}
+      className="border-2 p-0.5 justify-center items-center"
+      style={{
+        width: outer,
+        height: outer,
+        borderRadius: outer / 2,
+        borderColor: seen ? colors.border : colors.primary,
+      }}
     >
       {content}
     </View>
@@ -85,12 +83,3 @@ export function Avatar({ uri, name, size = 32, ring = false, seen = false }: Pro
     content
   );
 }
-
-const styles = StyleSheet.create({
-  ring: {
-    borderWidth: 2,
-    padding: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, FlatList, StyleSheet, Pressable, Image, RefreshControl } from "react-native";
+import { View, Text, FlatList, Pressable, Image, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,28 +30,28 @@ function NotifRow({ item }: { item: ActivityItem }) {
   };
 
   return (
-    <Pressable style={styles.row} onPress={() => router.push(`/user/${item.actor.username}`)}>
+    <Pressable className="flex-row items-center gap-3 px-4 py-3" onPress={() => router.push(`/user/${item.actor.username}`)}>
       <Avatar uri={item.actor.avatarUrl} name={item.actor.name} size={44} />
-      <View style={styles.content}>
-        <Text style={styles.text}>
-          <Text style={styles.bold}>{item.actor.username}</Text>
+      <View className="flex-1">
+        <Text className="text-text text-sm leading-5">
+          <Text className="font-semibold">{item.actor.username}</Text>
           {item.type === "like" && " a aimé ta publication."}
           {item.type === "follow" && " s'est abonné(e)."}
           {item.type === "comment" && ` a commenté : "${item.text}"`}
-          <Text style={styles.time}> {timeAgo(item.createdAt)}</Text>
+          <Text className="text-text-muted"> {timeAgo(item.createdAt)}</Text>
         </Text>
       </View>
       {item.type === "follow" ? (
         <Pressable
-          style={[styles.followBtn, following && styles.followingBtn]}
+          className={following ? "bg-surface border border-border px-4 py-1.5 rounded-lg" : "bg-primary px-4 py-1.5 rounded-lg"}
           onPress={(e) => { e.stopPropagation?.(); handleFollow(); }}
         >
-          <Text style={[styles.followText, following && styles.followingText]}>
+          <Text className={following ? "text-text font-semibold text-[13px]" : "text-white font-semibold text-[13px]"}>
             {following ? "Abonné" : "Suivre"}
           </Text>
         </Pressable>
       ) : item.postImage ? (
-        <Image source={{ uri: item.postImage }} style={styles.thumb} />
+        <Image source={{ uri: item.postImage }} className="w-11 h-11 rounded-md" />
       ) : null}
     </Pressable>
   );
@@ -62,9 +62,9 @@ export default function ActivityScreen() {
   const { data: items = [], isLoading, refetch } = useActivityQuery();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Activité</Text>
+    <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+      <View className="px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+        <Text className="text-xl font-bold text-text">Activité</Text>
       </View>
 
       <FlatList
@@ -76,9 +76,9 @@ export default function ActivityScreen() {
         }
         ListEmptyComponent={() =>
           !isLoading ? (
-            <View style={styles.empty}>
+            <View className="flex-1 justify-center items-center gap-2">
               <Ionicons name="heart-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyText}>Aucune activité pour le moment</Text>
+              <Text className="text-base font-semibold text-text">Aucune activité pour le moment</Text>
             </View>
           ) : null
         }
@@ -86,29 +86,3 @@ export default function ActivityScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
-  },
-  title: { fontSize: 18, fontWeight: "700", color: colors.primary },
-  row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10, gap: 12 },
-  content: { flex: 1 },
-  text: { color: colors.text, fontSize: 13, lineHeight: 18 },
-  bold: { fontWeight: "600" },
-  time: { color: colors.textMuted },
-  followBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 },
-  followingBtn: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  followText: { color: "#ffffff", fontWeight: "600", fontSize: 13 },
-  followingText: { color: colors.text },
-  thumb: { width: 44, height: 44, borderRadius: 6 },
-  empty: { padding: 60, alignItems: "center", gap: 12 },
-  emptyText: { color: colors.textMuted, fontSize: 15 },
-});

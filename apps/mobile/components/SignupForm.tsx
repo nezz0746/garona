@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   Pressable,
   ActivityIndicator,
@@ -127,25 +126,25 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1 bg-bg"
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Pressable onPress={onBack} style={styles.backBtn}>
+      <Pressable onPress={onBack} className="p-4">
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </Pressable>
 
-      <View style={styles.content}>
-        <View style={styles.iconWrap}>
+      <View className="flex-1 px-8 items-center gap-3">
+        <View className="w-[88px] h-[88px] rounded-[44px] bg-surface justify-center items-center mb-1">
           <Text style={{ fontSize: 48 }}>🏠</Text>
         </View>
 
-        <Text style={styles.title}>Créer ton compte</Text>
+        <Text className="text-2xl font-extrabold text-text mb-2">Créer ton compte</Text>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Ton nom</Text>
+        <View className="w-full gap-4">
+          <View className="gap-1.5">
+            <Text className="text-[13px] font-semibold text-text pl-1">Ton nom</Text>
             <TextInput
-              style={styles.input}
+              className="bg-surface border border-border rounded-xl px-4 py-3.5 text-base text-text"
               placeholder="Prénom ou pseudo"
               placeholderTextColor={colors.textMuted}
               value={name}
@@ -156,19 +155,16 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Nom d'utilisateur</Text>
-            <View style={styles.usernameRow}>
-              <Text style={styles.atSign}>@</Text>
+          <View className="gap-1.5">
+            <Text className="text-[13px] font-semibold text-text pl-1">Nom d'utilisateur</Text>
+            <View className="flex-row items-center">
+              <Text className="bg-surface border border-border border-r-0 rounded-tl-xl rounded-bl-xl px-3.5 py-3.5 text-base text-text-muted font-semibold">@</Text>
               <TextInput
-                style={[
-                  styles.input,
-                  {
-                    flex: 1,
-                    borderTopLeftRadius: 0,
-                    borderBottomLeftRadius: 0,
-                  },
-                ]}
+                className="bg-surface border border-border rounded-xl px-4 py-3.5 text-base text-text flex-1"
+                style={{
+                  borderTopLeftRadius: 0,
+                  borderBottomLeftRadius: 0,
+                }}
                 placeholder="ton.username"
                 placeholderTextColor={colors.textMuted}
                 value={username}
@@ -184,9 +180,9 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
           </View>
 
           {error && (
-            <View style={styles.errorRow}>
+            <View className="flex-row items-center gap-1.5 px-1">
               <Ionicons name="alert-circle" size={16} color="#ef4444" />
-              <Text style={styles.errorText}>{error}</Text>
+              <Text className="text-[#ef4444] text-[13px] flex-1">{error}</Text>
             </View>
           )}
         </View>
@@ -194,16 +190,16 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
         {/* Signup button */}
         {biometricAvailable === false ? (
           // No biometrics — block signup
-          <View style={styles.blockedWrap}>
-            <View style={styles.blockedIcon}>
+          <View className="items-center gap-2 mt-4 px-2">
+            <View className="w-16 h-16 rounded-full bg-surface justify-center items-center">
               <Ionicons
                 name="lock-closed-outline"
                 size={32}
                 color={colors.textMuted}
               />
             </View>
-            <Text style={styles.blockedTitle}>Biométrie non disponible</Text>
-            <Text style={styles.blockedText}>
+            <Text className="text-base font-bold text-text">Biométrie non disponible</Text>
+            <Text className="text-[13px] text-text-muted text-center leading-5">
               Garona nécessite Face ID ou une empreinte digitale pour sécuriser
               ton compte. Configure la biométrie dans les réglages de ton
               appareil.
@@ -211,10 +207,8 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
           </View>
         ) : (
           <Pressable
-            style={[
-              styles.signupBtn,
-              (!name.trim() || !username.trim() || loading) && { opacity: 0.5 },
-            ]}
+            className="flex-row items-center justify-center gap-2.5 bg-primary rounded-xl py-4 w-full mt-2"
+            style={(!name.trim() || !username.trim() || loading) ? { opacity: 0.5 } : undefined}
             onPress={handleSignup}
             disabled={!name.trim() || !username.trim() || loading}
           >
@@ -231,7 +225,7 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
                   size={20}
                   color="#fff"
                 />
-                <Text style={styles.signupText}>
+                <Text className="text-white text-[17px] font-bold">
                   {biometricType
                     ? `Créer avec ${biometricType}`
                     : "Créer mon compte"}
@@ -244,96 +238,3 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  backBtn: { padding: 16 },
-  content: { flex: 1, paddingHorizontal: 32, alignItems: "center", gap: 12 },
-  iconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: colors.text,
-    marginBottom: 8,
-  },
-  form: { width: "100%", gap: 16 },
-  inputGroup: { gap: 6 },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text,
-    paddingLeft: 4,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: colors.text,
-  },
-  usernameRow: { flexDirection: "row", alignItems: "center" },
-  atSign: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    borderRightWidth: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: colors.textMuted,
-    fontWeight: "600",
-  },
-  errorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 4,
-  },
-  errorText: { color: "#ef4444", fontSize: 13, flex: 1 },
-  signupBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    width: "100%",
-    marginTop: 8,
-  },
-  signupText: { color: "#fff", fontSize: 17, fontWeight: "700" },
-  blockedWrap: {
-    alignItems: "center",
-    gap: 8,
-    marginTop: 16,
-    paddingHorizontal: 8,
-  },
-  blockedIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  blockedTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
-  blockedText: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-});

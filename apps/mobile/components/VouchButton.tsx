@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { Pressable, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
 import { vouchesApi } from "../lib/api";
@@ -36,7 +36,7 @@ export function VouchButton({ userId, hasVouched: initialVouched, onVouchChange 
 
   return (
     <Pressable
-      style={[styles.btn, vouched ? styles.vouched : styles.unvouched]}
+      className={`flex-row items-center gap-1.5 px-4 py-2 rounded-lg ${vouched ? "bg-primary-light border border-primary" : "bg-primary"}`}
       onPress={handlePress}
       disabled={loading}
     >
@@ -49,7 +49,7 @@ export function VouchButton({ userId, hasVouched: initialVouched, onVouchChange 
             size={16}
             color={vouched ? colors.primary : "#fff"}
           />
-          <Text style={[styles.text, vouched ? styles.vouchedText : styles.unvouchedText]}>
+          <Text className={`font-semibold text-[13px] ${vouched ? "text-primary" : "text-white"}`}>
             {vouched ? "Parrainé" : "Parrainer"}
           </Text>
         </>
@@ -57,32 +57,3 @@ export function VouchButton({ userId, hasVouched: initialVouched, onVouchChange 
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  unvouched: {
-    backgroundColor: colors.primary,
-  },
-  vouched: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  text: {
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  unvouchedText: {
-    color: "#fff",
-  },
-  vouchedText: {
-    color: colors.primary,
-  },
-});

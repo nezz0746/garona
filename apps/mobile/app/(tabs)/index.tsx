@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FlatList, View, Text, StyleSheet, RefreshControl, Pressable } from "react-native";
+import { FlatList, View, Text, RefreshControl, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,9 +17,9 @@ export default function HomeScreen() {
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>Garona</Text>
+    <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+      <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+        <Text className="text-2xl font-bold text-primary tracking-tight">Garona</Text>
         <Pressable onPress={() => router.push("/guide")} hitSlop={8}>
           <Ionicons name="book-outline" size={24} color={colors.text} />
         </Pressable>
@@ -37,16 +37,16 @@ export default function HomeScreen() {
         )}
         ListEmptyComponent={() =>
           !isLoading ? (
-            <View style={styles.empty}>
+            <View className="p-10 items-center gap-2">
               {error ? (
                 <>
-                  <Text style={styles.emptyText}>Erreur de chargement</Text>
-                  <Text style={styles.emptyHint}>{error.message}</Text>
+                  <Text className="text-base font-semibold text-text">Erreur de chargement</Text>
+                  <Text className="text-sm text-text-muted text-center">{error.message}</Text>
                 </>
               ) : (
                 <>
-                  <Text style={styles.emptyText}>Aucune publication pour le moment</Text>
-                  <Text style={styles.emptyHint}>Suis des Toulousains pour voir leurs posts ici</Text>
+                  <Text className="text-base font-semibold text-text">Aucune publication pour le moment</Text>
+                  <Text className="text-sm text-text-muted text-center">Suis des Toulousains pour voir leurs posts ici</Text>
                 </>
               )}
             </View>
@@ -64,21 +64,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.border,
-  },
-  logo: { fontSize: 24, fontWeight: "700", color: colors.primary, letterSpacing: -0.5 },
-  headerIcons: { flexDirection: "row", gap: 16 },
-  empty: { padding: 40, alignItems: "center", gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: "600", color: colors.text },
-  emptyHint: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
-});
