@@ -1,15 +1,25 @@
-import { useState } from "react";
-import { View, Text, TextInput, FlatList, Image, Dimensions, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, EXPLORE_IMAGES } from "@garona/shared";
 import { Avatar } from "@garona/ui";
-import { PalierBadge } from "../../components/PalierBadge";
+import { router } from "expo-router";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSearchQuery } from "../../hooks/queries/useSearchQuery";
 
 const GAP = 2;
 const COLS = 3;
-const TILE = (Math.min(Dimensions.get("window").width, 600) - GAP * (COLS - 1)) / COLS;
+const TILE =
+  (Math.min(Dimensions.get("window").width, 600) - GAP * (COLS - 1)) / COLS;
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
@@ -43,19 +53,42 @@ export default function SearchScreen() {
           data={results}
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
-            <Pressable className="flex-row items-center gap-3 px-4 py-2.5">
+            <Pressable
+              className="flex-row items-center gap-3 px-4 py-2.5"
+              onPress={() => router.push(`/user/${item.username}`)}
+            >
               <Avatar uri={item.avatarUrl} name={item.name} size={48} />
               <View className="flex-1">
-                <Text className="text-text font-semibold text-[15px]">{item.name}</Text>
-                <Text className="text-text-muted text-[13px]">@{item.username}</Text>
-                {item.bio && <Text className="text-text-secondary text-xs mt-0.5" numberOfLines={1}>{item.bio}</Text>}
+                <Text className="text-text font-semibold text-[15px]">
+                  {item.name}
+                </Text>
+                <Text className="text-text-muted text-[13px]">
+                  @{item.username}
+                </Text>
+                {item.bio && (
+                  <Text
+                    className="text-text-secondary text-xs mt-0.5"
+                    numberOfLines={1}
+                  >
+                    {item.bio}
+                  </Text>
+                )}
               </View>
             </Pressable>
           )}
+          ListHeaderComponent={() =>
+            searching ? (
+              <View className="px-4 py-5">
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={() =>
             !searching ? (
               <View className="p-10 items-center">
-                <Text className="text-text-muted text-sm">Aucun résultat pour "{query}"</Text>
+                <Text className="text-text-muted text-sm">
+                  Aucun résultat pour "{query}"
+                </Text>
               </View>
             ) : null
           }
@@ -69,7 +102,10 @@ export default function SearchScreen() {
           contentContainerStyle={{ gap: GAP }}
           renderItem={({ item }) => (
             <Pressable>
-              <Image source={{ uri: item.image }} style={{ width: TILE, height: TILE }} />
+              <Image
+                source={{ uri: item.image }}
+                style={{ width: TILE, height: TILE }}
+              />
             </Pressable>
           )}
         />

@@ -1,7 +1,7 @@
+import { db, follows, posts, users, vouches } from "@garona/db";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
-import { db, users, follows, posts, vouches } from "@garona/db";
-import { eq, and, sql, like } from "drizzle-orm";
-import { requirePalier, getUserPalier } from "../middleware";
+import { getUserPalier, requirePalier } from "../middleware";
 
 const app = new Hono();
 
@@ -10,7 +10,10 @@ app.get("/:username", async (c) => {
   const username = c.req.param("username");
   const currentUserId = c.get("userId");
 
-  const [user] = await db.select().from(users).where(eq(users.username, username));
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username));
   if (!user) return c.json({ error: "Not found" }, 404);
 
   const palier = await getUserPalier(user.id);
@@ -37,13 +40,24 @@ app.get("/:username", async (c) => {
     const [f] = await db
       .select()
       .from(follows)
-      .where(and(eq(follows.followerId, currentUserId), eq(follows.followingId, user.id)));
+      .where(
+        and(
+          eq(follows.followerId, currentUserId),
+          eq(follows.followingId, user.id),
+        ),
+      );
     isFollowing = !!f;
 
     const [v] = await db
       .select()
       .from(vouches)
-      .where(and(eq(vouches.voucherId, currentUserId), eq(vouches.voucheeId, user.id), eq(vouches.revoked, false)));
+      .where(
+        and(
+          eq(vouches.voucherId, currentUserId),
+          eq(vouches.voucheeId, user.id),
+          eq(vouches.revoked, false),
+        ),
+      );
     hasVouched = !!v;
   }
 
@@ -68,9 +82,13 @@ app.post("/:username/follow", requirePalier(1), async (c) => {
   const followerId = c.get("userId");
   const username = c.req.param("username");
 
-  const [target] = await db.select().from(users).where(eq(users.username, username));
+  const [target] = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username));
   if (!target) return c.json({ error: "Not found" }, 404);
-  if (target.id === followerId) return c.json({ error: "Can't follow yourself" }, 400);
+  if (target.id === followerId)
+    return c.json({ error: "Can't follow yourself" }, 400);
 
   try {
     await db.insert(follows).values({ followerId, followingId: target.id });
@@ -78,7 +96,12 @@ app.post("/:username/follow", requirePalier(1), async (c) => {
   } catch {
     await db
       .delete(follows)
-      .where(and(eq(follows.followerId, followerId), eq(follows.followingId, target.id)));
+      .where(
+        and(
+          eq(follows.followerId, followerId),
+          eq(follows.followingId, target.id),
+        ),
+      );
     return c.json({ following: false });
   }
 });
@@ -89,7 +112,10 @@ app.get("/:username/posts", async (c) => {
   const limit = Number(c.req.query("limit") || 30);
   const format = c.req.query("format"); // "feed" for enriched format
 
-  const [user] = await db.select().from(users).where(eq(users.username, username));
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username));
   if (!user) return c.json({ error: "Not found" }, 404);
 
   if (format === "feed") {
@@ -106,7 +132,11 @@ app.get("/:username/posts", async (c) => {
   }
 
   const userPosts = await db
-    .select({ id: posts.id, imageUrl: posts.imageUrl, createdAt: posts.createdAt })
+    .select({
+      id: posts.id,
+      imageUrl: posts.imageUrl,
+      createdAt: posts.createdAt,
+    })
     .from(posts)
     .where(eq(posts.authorId, user.id))
     .orderBy(sql`${posts.createdAt} desc`)
@@ -117,8 +147,11 @@ app.get("/:username/posts", async (c) => {
 
 // Search users
 app.get("/", async (c) => {
-  const q = c.req.query("q");
+  const q = c.req.query("q")?.trim();
   if (!q || q.length < 2) return c.json([]);
+
+  const pattern = `%${q}%`;
+  const prefixPattern = `${q}%`;
 
   const results = await db
     .select({
@@ -129,7 +162,12 @@ app.get("/", async (c) => {
       bio: users.bio,
     })
     .from(users)
-    .where(like(users.username, `%${q.toLowerCase()}%`))
+    .where(or(ilike(users.username, pattern), ilike(users.name, pattern)))
+    .orderBy(
+      sql`CASE WHEN ${users.username} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`,
+      sql`CASE WHEN ${users.name} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`,
+      users.username,
+    )
     .limit(20);
 
   return c.json(results);
