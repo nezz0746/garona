@@ -1,11 +1,27 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { passkey } from "@better-auth/passkey";
-import { db } from "@garona/db";
+import {
+  db,
+  users,
+  sessions,
+  accounts,
+  passkeys,
+  verifications,
+} from "@garona/db";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
-  database: drizzleAdapter(db, { provider: "pg" }),
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: {
+      user: users,
+      session: sessions,
+      account: accounts,
+      passkey: passkeys,
+      verification: verifications,
+    },
+  }),
   emailAndPassword: {
     enabled: true,
   },
