@@ -64,7 +64,6 @@ function applyGlobalFontDefaults() {
 export default function RootLayout() {
   const [appState, setAppState] = useState<AppState>("loading");
   const [user, setUser] = useState<AuthUser>(null);
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
   const [fontsLoaded] = useFonts({
     AntiqueOliveNord: require("../assets/AntiqueOliveNord.woff"),
@@ -127,7 +126,6 @@ export default function RootLayout() {
     } catch {}
     clearAllQueries();
     setUser(null);
-    setInviteCode(null);
     setAppState("launch");
   }, []);
 
@@ -211,8 +209,6 @@ export default function RootLayout() {
         value={{
           user,
           isLoading: false,
-          inviteCode,
-          setInviteCode,
           signIn: () => {},
           signOut,
         }}

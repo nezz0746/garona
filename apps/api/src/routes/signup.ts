@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db, users, invites } from "@garona/db";
+import { db, users } from "@garona/db";
 import { eq } from "drizzle-orm";
 import { auth } from "../auth";
 import { nanoid } from "nanoid";
@@ -8,7 +8,7 @@ const app = new Hono();
 
 // Sign up — creates account via Better Auth (session included), becomes Rang 1 (Membre)
 app.post("/", async (c) => {
-  const { name, username, inviteCode } = await c.req.json();
+  const { name, username } = await c.req.json();
 
   if (!name?.trim()) return c.json({ error: "Nom requis" }, 400);
   if (!username?.trim())
@@ -56,20 +56,6 @@ app.post("/", async (c) => {
     .update(users)
     .set({ username: cleanUsername })
     .where(eq(users.id, authData.user.id));
-
-  // If invite code provided, mark it as used
-  if (inviteCode) {
-    const [invite] = await db
-      .select()
-      .from(invites)
-      .where(eq(invites.code, inviteCode));
-    if (invite && !invite.usedById) {
-      await db
-        .update(invites)
-        .set({ usedById: authData.user.id })
-        .where(eq(invites.id, invite.id));
-    }
-  }
 
   // Forward session cookies from Better Auth
   authResponse.headers.forEach((value, key) => {

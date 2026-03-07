@@ -81,22 +81,6 @@ export const verifications = pgTable("verifications", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ─── Invites ───
-export const invites = pgTable(
-  "invites",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    code: text("code").unique().notNull(),
-    creatorId: uuid("creator_id")
-      .notNull()
-      .references(() => users.id),
-    usedById: uuid("used_by_id").references(() => users.id),
-    expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => [index("invites_code_idx").on(t.code)],
-);
-
 // ─── Vouches (Web of Trust) ───
 export const vouches = pgTable(
   "vouches",

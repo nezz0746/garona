@@ -11,8 +11,6 @@ export type AuthUser = {
 export type AuthContextType = {
   user: AuthUser;
   isLoading: boolean;
-  inviteCode: string | null;
-  setInviteCode: (code: string | null) => void;
   signIn: () => void;
   signOut: () => void;
 };
@@ -20,8 +18,6 @@ export type AuthContextType = {
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  inviteCode: null,
-  setInviteCode: () => {},
   signIn: () => {},
   signOut: () => {},
 });

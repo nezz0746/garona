@@ -9,7 +9,7 @@ Users earn ranks through community vouching, unlocking features progressively:
 | 1    | Membre | Suivre, liker                |
 | 2    | Actif  | Poster, commenter            |
 | 3    | Proche | Messages prives              |
-| 4    | Leader | Inviter, organiser           |
+| 4    | Leader | Organiser                    |
 | 5    | Ancien | Moderer                      |
 
 ## Stack

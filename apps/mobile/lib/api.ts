@@ -126,10 +126,10 @@ export type SignupResult = {
 };
 
 export const signupApi = {
-  create: (name: string, username: string, inviteCode?: string) =>
+  create: (name: string, username: string) =>
     apiFetch<SignupResult>("/api/signup", {
       method: "POST",
-      body: JSON.stringify({ name, username, ...(inviteCode && { inviteCode }) }),
+      body: JSON.stringify({ name, username }),
     }),
 };
 
@@ -154,22 +154,10 @@ export type VouchInfo = {
   vouchesGiven: number;
 };
 
-export type InviteResult = {
-  code: string;
-  expiresAt: string;
-  link: string;
-};
-
 export const vouchesApi = {
   me: () => apiFetch<VouchInfo>("/api/vouches/me"),
   vouch: (userId: string) =>
     apiFetch<{ success: boolean; newPalier: number }>(`/api/vouches/vouch/${userId}`, { method: "POST" }),
   revoke: (userId: string) =>
     apiFetch<{ success: boolean; newPalier: number }>(`/api/vouches/vouch/${userId}`, { method: "DELETE" }),
-  createInvite: () =>
-    apiFetch<InviteResult>("/api/vouches/invite", { method: "POST" }),
-  validateInvite: (code: string) =>
-    apiFetch<{ valid: boolean; creator: { name: string; username: string; avatarUrl: string } | null; expiresAt: string }>(
-      `/api/vouches/invite/${code}`
-    ),
 };

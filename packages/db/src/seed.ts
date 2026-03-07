@@ -2,7 +2,6 @@ import { db } from "./client";
 import {
   users,
   vouches,
-  invites,
   posts,
   likes,
   comments,
@@ -10,7 +9,6 @@ import {
   stories,
 } from "./schema";
 import { computePalier } from "./palier";
-import crypto from "crypto";
 
 async function seed() {
   console.log("🌱 Seeding Garona...");
@@ -21,7 +19,6 @@ async function seed() {
   await db.delete(likes);
   await db.delete(follows);
   await db.delete(vouches);
-  await db.delete(invites);
   await db.delete(posts);
   // Don't delete users if BetterAuth accounts reference them
   // For clean seed, delete accounts/sessions first
@@ -233,27 +230,6 @@ async function seed() {
     await db.insert(vouches).values(vouchValues);
     console.log(`  ✅ ${vouchValues.length} vouches`);
   }
-
-  // ─── Invites ───
-  const inviteValues = [
-    {
-      code: "GARONA-TOULOUSE-2026",
-      creatorId: u[0].id,
-      expiresAt: new Date("2027-01-01"),
-    },
-    {
-      code: "BIENVENUE-" + crypto.randomBytes(4).toString("hex"),
-      creatorId: u[1].id,
-      expiresAt: new Date("2026-06-01"),
-    },
-    {
-      code: "SALUT-" + crypto.randomBytes(4).toString("hex"),
-      creatorId: u[2].id,
-      expiresAt: new Date("2026-06-01"),
-    },
-  ];
-  await db.insert(invites).values(inviteValues);
-  console.log(`  ✅ ${inviteValues.length} invites`);
 
   // ─── Posts (only from users with palier >= 2) ───
   const postData = [

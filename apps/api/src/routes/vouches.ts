@@ -1,8 +1,7 @@
 import { Hono } from "hono";
-import { db, vouches, users, invites } from "@garona/db";
+import { db, vouches, users } from "@garona/db";
 import { vouchWeight } from "@garona/db/src/palier";
 import { eq, and, sql } from "drizzle-orm";
-import { nanoid } from "nanoid";
 import { requirePalier, getUserPalier } from "../middleware";
 
 const app = new Hono();
@@ -85,38 +84,6 @@ app.delete("/vouch/:userId", requirePalier(1), async (c) => {
 
   const newPalier = await getUserPalier(voucheeId);
   return c.json({ success: true, newPalier });
-});
-
-// Generate invite (palier >= 4)
-app.post("/invite", requirePalier(4), async (c) => {
-  const creatorId = c.get("userId");
-  const code = `GARONA-${nanoid(8).toUpperCase()}`;
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  await db.insert(invites).values({ code, creatorId, expiresAt });
-
-  return c.json({ code, expiresAt, link: `garona://invite/${code}` });
-});
-
-// Validate invite code (public, no auth needed)
-app.get("/invite/:code", async (c) => {
-  const code = c.req.param("code");
-  const result = await db.select().from(invites).where(eq(invites.code, code));
-
-  if (result.length === 0) return c.json({ valid: false, error: "Invalid code" }, 404);
-
-  const invite = result[0];
-  if (invite.usedById) return c.json({ valid: false, error: "Already used" }, 410);
-  if (invite.expiresAt < new Date()) return c.json({ valid: false, error: "Expired" }, 410);
-
-  // Get creator info
-  const creator = await db.select().from(users).where(eq(users.id, invite.creatorId));
-
-  return c.json({
-    valid: true,
-    creator: creator[0] ? { name: creator[0].name, username: creator[0].username, avatarUrl: creator[0].avatarUrl } : null,
-    expiresAt: invite.expiresAt,
-  });
 });
 
 export default app;

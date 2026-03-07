@@ -8,5 +8,4 @@ export const queryKeys = {
   search: (query: string) => ["search", query] as const,
   me: () => ["me"] as const,
   vouchesMe: () => ["vouchesMe"] as const,
-  inviteValidation: (code: string) => ["inviteValidation", code] as const,
 };

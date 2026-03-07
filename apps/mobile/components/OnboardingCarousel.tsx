@@ -52,9 +52,9 @@ const SLIDES: Slide[] = [
     id: "4",
     icon: "qr-code-outline",
     title: "Prêt ?",
-    subtitle: "Scanne une invitation pour commencer",
+    subtitle: "Fais-toi parrainer pour débloquer plus",
     description:
-      "Demande à un ami toulousain de t'envoyer un lien ou un QR code d'invitation. C'est tout ce qu'il faut.",
+      "Demande à un ami toulousain de te parrainer via ton QR code ou ton profil. C'est tout ce qu'il faut.",
   },
 ];
 
@@ -154,7 +154,7 @@ export function OnboardingCarousel({ onFinish, onSignIn, signingIn }: Props) {
             >
               <Ionicons name="qr-code-outline" size={20} color="#fff" />
               <Text className="text-white text-base font-semibold">
-                Scanner une invitation
+                Créer mon compte
               </Text>
             </Pressable>
 

@@ -25,7 +25,7 @@ export const RANG_THRESHOLDS = [
     level: 4,
     vouches: 10,
     label: "Notable",
-    abilities: ["create events", "generate invites"],
+    abilities: ["create events"],
   },
   {
     level: 5,
@@ -70,7 +70,7 @@ export function vouchWeight(voucherPalier: PalierLevel): number {
 // Can this rang level perform this action?
 export function canPerform(palier: PalierLevel, action: string): boolean {
   for (let i = 0; i <= palier; i++) {
-    if (RANG_THRESHOLDS[i].abilities.includes(action)) return true;
+    if ((RANG_THRESHOLDS[i].abilities as readonly string[]).includes(action)) return true;
   }
   return false;
 }

@@ -8,7 +8,7 @@ const RANGS = [
   { rang: 1, name: "Membre", emoji: "🏠", vouches: 0, perks: "Suivre des profils, liker", color: "#94a3b8" },
   { rang: 2, name: "Contributeur", emoji: "📸", vouches: 3, perks: "Publier des photos, commenter", color: "#22c55e" },
   { rang: 3, name: "Résident", emoji: "💬", vouches: 5, perks: "Messages privés, stories", color: "#3b82f6" },
-  { rang: 4, name: "Notable", emoji: "⭐", vouches: 10, perks: "Inviter de nouveaux membres, organiser", color: "#f59e0b" },
+  { rang: 4, name: "Notable", emoji: "⭐", vouches: 10, perks: "Organiser des événements", color: "#f59e0b" },
   { rang: 5, name: "Gardien", emoji: "🏛", vouches: 20, perks: "Modérer le réseau, protéger la communauté", color: "#a855f7" },
 ];
 

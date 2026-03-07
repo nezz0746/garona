@@ -31,7 +31,6 @@ app.use("/api/*", async (c, next) => {
   // Skip auth check for public routes
   const path = c.req.path;
   if (path.startsWith("/api/auth")) return next();
-  if (path.match(/^\/api\/vouches\/invite\/[^/]+$/) && c.req.method === "GET") return next();
   if (path === "/api/signup" && c.req.method === "POST") return next();
 
   // Dev mode: X-Dev-User header maps to a seeded username

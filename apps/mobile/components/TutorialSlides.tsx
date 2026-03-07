@@ -21,7 +21,7 @@ const SLIDES = [
     icon: "shield-checkmark-outline" as const,
     title: "Les rangs",
     subtitle: "Monte en confiance",
-    description: "🏠 Rang 1 — Suivre, liker\n📸 Rang 2 — Poster, commenter\n💬 Rang 3 — Messages privés\n⭐ Rang 4 — Inviter, organiser\n🏛 Rang 5 — Modérer",
+    description: "🏠 Rang 1 — Suivre, liker\n📸 Rang 2 — Poster, commenter\n💬 Rang 3 — Messages privés\n⭐ Rang 4 — Organiser\n🏛 Rang 5 — Modérer",
   },
   {
     id: "3",

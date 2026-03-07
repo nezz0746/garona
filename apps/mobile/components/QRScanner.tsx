@@ -24,7 +24,7 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
           <Ionicons name="camera-outline" size={48} color={colors.primary} />
           <Text className="text-[22px] font-bold text-text">Caméra requise</Text>
           <Text className="text-[15px] text-text-secondary text-center leading-[22px]">
-            Pour scanner un QR code d'invitation, Garona a besoin d'accéder à ta caméra.
+            Pour scanner un QR code, Garona a besoin d'accéder à ta caméra.
           </Text>
           <Pressable className="bg-primary px-8 py-3.5 rounded-xl mt-2" onPress={requestPermission}>
             <Text className="text-white text-base font-semibold">Autoriser la caméra</Text>
@@ -41,13 +41,7 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
     if (scanned) return;
     setScanned(true);
 
-    // Extract invite code from URL or raw code
-    // Formats: garona://invite/CODE or https://garona.city/invite/CODE or just CODE
-    let code = data;
-    const match = data.match(/invite\/([A-Z0-9-]+)/i);
-    if (match) code = match[1];
-
-    onCodeScanned(code);
+    onCodeScanned(data);
   };
 
   return (
@@ -65,7 +59,7 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
             <Pressable onPress={onClose} className="p-1">
               <Ionicons name="close" size={28} color="#fff" />
             </Pressable>
-            <Text className="text-white text-lg font-semibold">Scanner l'invitation</Text>
+            <Text className="text-white text-lg font-semibold">Scanner un QR code</Text>
             <View style={{ width: 36 }} />
           </View>
 
@@ -83,7 +77,7 @@ export function QRScanner({ onCodeScanned, onClose }: Props) {
           {/* Instructions */}
           <View className="items-center py-6">
             <Text className="text-white text-[15px] text-center" style={{ opacity: 0.9 }}>
-              Pointe ta caméra vers le QR code d'invitation
+              Pointe ta caméra vers le QR code
             </Text>
           </View>
 
