@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, FlatList, Image, StyleSheet, Dimensions, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Image, Dimensions, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,9 +17,9 @@ const TILE = (Math.min(Dimensions.get("window").width, 600) - GAP * (COLS - 1)) 
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <View style={styles.stat}>
-      <Text style={styles.statVal}>{value.toLocaleString()}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View className="items-center">
+      <Text className="text-text font-bold text-base">{value.toLocaleString()}</Text>
+      <Text className="text-text-secondary text-xs mt-0.5">{label}</Text>
     </View>
   );
 }
@@ -33,17 +33,17 @@ export default function ProfileScreen() {
 
   if (profileLoading && !profile) {
     return (
-      <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
+      <View className="flex-1 bg-bg justify-center items-center" style={{ paddingTop: insets.top }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerName}>{user?.username || "profil"}</Text>
-        <View style={styles.headerIcons}>
+    <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+      <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+        <Text className="text-xl font-bold text-text">{user?.username || "profil"}</Text>
+        <View className="flex-row gap-4">
           <IconButton name="log-out-outline" size={24} onPress={signOut} />
         </View>
       </View>
@@ -57,41 +57,45 @@ export default function ProfileScreen() {
         ListHeaderComponent={() => (
           <View>
             {/* Profile info */}
-            <View style={styles.profileRow}>
+            <View className="flex-row items-center px-4 pt-4 gap-6">
               <Avatar uri={profile?.avatarUrl || user?.avatarUrl} name={profile?.name || user?.name} size={80} />
-              <View style={styles.statsRow}>
+              <View className="flex-1 flex-row justify-around">
                 <Stat label="Posts" value={profile?.posts ?? 0} />
                 <Stat label="Abonnés" value={profile?.followers ?? 0} />
                 <Stat label="Abonnements" value={profile?.following ?? 0} />
               </View>
             </View>
 
-            <View style={styles.bio}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Text style={styles.displayName}>{profile?.name || user?.name}</Text>
+            <View className="px-4 pt-3">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-text font-semibold text-[15px]">{profile?.name || user?.name}</Text>
                 <PalierBadge palier={profile?.palier ?? user?.palier ?? 0} size="sm" />
               </View>
-              {profile?.bio && <Text style={styles.bioText}>{profile.bio}</Text>}
+              {profile?.bio && <Text className="text-text text-[13px] mt-1">{profile.bio}</Text>}
             </View>
 
             {/* Buttons */}
-            <View style={styles.btnRow}>
-              <Pressable style={styles.editBtn}><Text style={styles.editText}>Modifier le profil</Text></Pressable>
-              <Pressable style={styles.editBtn} onPress={() => setShareVisible(true)}><Text style={styles.editText}>Partager</Text></Pressable>
+            <View className="flex-row px-4 pt-4 gap-1.5">
+              <Pressable className="flex-1 bg-surface rounded-lg py-[7px] items-center border border-border">
+                <Text className="text-primary font-semibold text-[13px]">Modifier le profil</Text>
+              </Pressable>
+              <Pressable className="flex-1 bg-surface rounded-lg py-[7px] items-center border border-border" onPress={() => setShareVisible(true)}>
+                <Text className="text-primary font-semibold text-[13px]">Partager</Text>
+              </Pressable>
             </View>
 
             {/* Grid header */}
-            <View style={styles.tabs}>
-              <Pressable style={[styles.tab, styles.activeTab]}>
+            <View className="flex-row border-t border-b border-border mt-4" style={{ borderTopWidth: 0.5, borderBottomWidth: 0.5 }}>
+              <Pressable className="flex-1 items-center py-2.5 border-b-2 border-primary">
                 <Ionicons name="grid-outline" size={22} color={colors.text} />
               </Pressable>
             </View>
           </View>
         )}
         ListEmptyComponent={() => (
-          <View style={styles.empty}>
+          <View className="py-[60px] items-center gap-3">
             <Ionicons name="camera-outline" size={40} color={colors.textMuted} />
-            <Text style={styles.emptyText}>Aucune publication</Text>
+            <Text className="text-text-muted text-[15px]">Aucune publication</Text>
           </View>
         )}
         renderItem={({ item, index }) => (
@@ -111,27 +115,3 @@ export default function ProfileScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  center: { justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: colors.border },
-  headerName: { fontSize: 20, fontWeight: "700", color: colors.text },
-  headerIcons: { flexDirection: "row", gap: 16 },
-  profileRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 16, gap: 24 },
-  statsRow: { flex: 1, flexDirection: "row", justifyContent: "space-around" },
-  stat: { alignItems: "center" },
-  statVal: { color: colors.text, fontWeight: "700", fontSize: 16 },
-  statLabel: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
-  bio: { paddingHorizontal: 16, paddingTop: 12 },
-  displayName: { color: colors.text, fontWeight: "600", fontSize: 15 },
-  bioText: { color: colors.text, fontSize: 13, marginTop: 4 },
-  btnRow: { flexDirection: "row", paddingHorizontal: 16, paddingTop: 16, gap: 6 },
-  editBtn: { flex: 1, backgroundColor: colors.surface, borderRadius: 8, paddingVertical: 7, alignItems: "center", borderWidth: 1, borderColor: colors.border },
-  editText: { color: colors.primary, fontWeight: "600", fontSize: 13 },
-  tabs: { flexDirection: "row", borderTopWidth: 0.5, borderTopColor: colors.border, borderBottomWidth: 0.5, borderBottomColor: colors.border, marginTop: 16 },
-  tab: { flex: 1, alignItems: "center", paddingVertical: 10 },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: colors.primary },
-  empty: { padding: 60, alignItems: "center", gap: 12 },
-  emptyText: { color: colors.textMuted, fontSize: 15 },
-});
