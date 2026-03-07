@@ -31,7 +31,7 @@ function NotifRow({ item }: { item: ActivityItem }) {
 
   return (
     <Pressable style={styles.row} onPress={() => router.push(`/user/${item.actor.username}`)}>
-      <Avatar uri={item.actor.avatarUrl || "https://i.pravatar.cc/150"} size={44} />
+      <Avatar uri={item.actor.avatarUrl} name={item.actor.name} size={44} />
       <View style={styles.content}>
         <Text style={styles.text}>
           <Text style={styles.bold}>{item.actor.username}</Text>

@@ -55,6 +55,8 @@ export function TutorialSlides({ userName, onFinish }: Props) {
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
+        snapToInterval={width}
+        decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -88,7 +90,7 @@ export function TutorialSlides({ userName, onFinish }: Props) {
             </Pressable>
             <Pressable
               style={styles.nextBtn}
-              onPress={() => flatListRef.current?.scrollToIndex({ index: activeIndex + 1 })}
+              onPress={() => flatListRef.current?.scrollToOffset({ offset: (activeIndex + 1) * width, animated: true })}
             >
               <Text style={styles.nextText}>Suivant</Text>
               <Ionicons name="arrow-forward" size={18} color="#fff" />

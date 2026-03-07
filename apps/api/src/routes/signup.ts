@@ -51,11 +51,10 @@ app.post("/", async (c) => {
 
   const authData = await authResponse.json();
 
-  // Update with username and avatar (Better Auth doesn't handle these)
-  const avatarUrl = `https://i.pravatar.cc/150?u=${cleanUsername}`;
+  // Update with username (Better Auth doesn't handle this field)
   await db
     .update(users)
-    .set({ username: cleanUsername, avatarUrl })
+    .set({ username: cleanUsername })
     .where(eq(users.id, authData.user.id));
 
   // If invite code provided, mark it as used
@@ -84,7 +83,7 @@ app.post("/", async (c) => {
       id: authData.user.id,
       name: name.trim(),
       username: cleanUsername,
-      avatarUrl,
+      avatarUrl: null,
       rang: 1,
     },
     201,

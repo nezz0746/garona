@@ -75,7 +75,7 @@ export default function RootLayout() {
       id: "dev-user",
       name: "Nezz",
       username: "nezz",
-      avatarUrl: "https://i.pravatar.cc/150?u=nezz",
+      avatarUrl: null,
       palier: 4,
     });
     setAppState("authenticated");

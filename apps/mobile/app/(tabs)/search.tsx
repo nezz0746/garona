@@ -70,7 +70,7 @@ export default function SearchScreen() {
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
             <Pressable style={styles.resultRow}>
-              <Avatar uri={item.avatarUrl || "https://i.pravatar.cc/150"} size={48} />
+              <Avatar uri={item.avatarUrl} name={item.name} size={48} />
               <View style={styles.resultInfo}>
                 <Text style={styles.resultName}>{item.name}</Text>
                 <Text style={styles.resultUsername}>@{item.username}</Text>

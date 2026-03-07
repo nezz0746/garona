@@ -54,7 +54,7 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable style={styles.headerLeft} onPress={() => router.push(`/user/${post.author.username}`)}>
-          <Avatar uri={post.author.avatarUrl || "https://i.pravatar.cc/150"} size={32} />
+          <Avatar uri={post.author.avatarUrl} name={post.author.name} size={32} />
           <Text style={styles.username}>{post.author.username}</Text>
         </Pressable>
         <IconButton name="ellipsis-horizontal" size={20} />

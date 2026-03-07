@@ -67,7 +67,7 @@ export function ProfileShareSheet({
 
         {/* Profile card */}
         <View style={styles.card}>
-          <Avatar uri={avatarUrl || "https://i.pravatar.cc/150"} size={64} />
+          <Avatar uri={avatarUrl} name={name} size={64} />
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.username}>@{username}</Text>
 

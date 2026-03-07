@@ -74,7 +74,7 @@ export default function ProfileScreen() {
           <View>
             {/* Profile info */}
             <View style={styles.profileRow}>
-              <Avatar uri={profile?.avatarUrl || user?.avatarUrl || "https://i.pravatar.cc/150"} size={80} />
+              <Avatar uri={profile?.avatarUrl || user?.avatarUrl} name={profile?.name || user?.name} size={80} />
               <View style={styles.statsRow}>
                 <Stat label="Posts" value={profile?.posts ?? 0} />
                 <Stat label="Abonnés" value={profile?.followers ?? 0} />

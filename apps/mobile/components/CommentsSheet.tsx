@@ -110,7 +110,7 @@ export function CommentsSheet({ postId, visible, onClose, onCommentAdded }: Prop
             contentContainerStyle={styles.list}
             renderItem={({ item }) => (
               <View style={styles.comment}>
-                <Avatar uri={item.author?.avatarUrl || "https://i.pravatar.cc/150"} size={32} />
+                <Avatar uri={item.author?.avatarUrl} name={item.author?.username} size={32} />
                 <View style={styles.commentBody}>
                   <Text style={styles.commentText}>
                     <Text style={styles.commentAuthor}>
