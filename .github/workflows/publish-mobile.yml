@@ -3,6 +3,12 @@ name: Publish Mobile
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      build-ios:
+        description: "Build & submit iOS to App Store"
+        type: boolean
+        default: false
 
 jobs:
   update:
@@ -35,6 +41,7 @@ jobs:
 
   build-ios:
     name: Build & Submit iOS
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build-ios }}
     runs-on: ubuntu-latest
     defaults:
       run:
