@@ -57,7 +57,7 @@ export const accounts = pgTable("accounts", {
 
 // ─── BetterAuth passkeys (WebAuthn credentials) ───
 export const passkeys = pgTable("passkeys", {
-  id: text("id").primaryKey(),
+  id: text("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   name: text("name"),
   publicKey: text("public_key").notNull(),
   userId: uuid("user_id")
@@ -68,6 +68,7 @@ export const passkeys = pgTable("passkeys", {
   deviceType: text("device_type").notNull(),
   backedUp: boolean("backed_up").notNull(),
   transports: text("transports"),
+  aaguid: text("aaguid"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

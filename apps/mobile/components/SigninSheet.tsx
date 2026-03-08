@@ -53,8 +53,8 @@ export function SigninSheet({ visible, onClose, onSignedIn }: Props) {
       } else {
         setError("Connexion annulée");
       }
-    } catch {
-      setError("Impossible de se connecter");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Impossible de se connecter");
     } finally {
       setLoading(false);
     }

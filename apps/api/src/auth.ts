@@ -63,6 +63,7 @@ export const auth = betterAuth({
     "http://localhost:3001",
     "http://192.168.1.58:3001",
     "https://garona.econome.studio",
+    "https://api.garona.econome.studio",
     "garona://",
   ],
 });

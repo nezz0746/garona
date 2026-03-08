@@ -22,7 +22,7 @@ app.use("*", cors({
 }));
 
 // BetterAuth handler
-app.on(["POST", "GET"], "/api/auth/**", (c) => {
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
 

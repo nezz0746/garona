@@ -31,18 +31,13 @@ export async function signInWithPasskey(): Promise<{
   id: string;
   name: string;
 } | null> {
-  try {
-    const { data, error } = await authClient.signIn.passkey();
-    if (error) {
-      console.log("Passkey sign-in error:", error);
-      return null;
-    }
-    if (!data?.user) return null;
-    return { id: data.user.id, name: data.user.name };
-  } catch (e) {
-    console.log("Passkey sign-in failed:", e);
-    return null;
+  const { data, error } = await authClient.signIn.passkey();
+  if (error) {
+    throw new Error(error.message || "Erreur passkey");
   }
+  if (!data?.session) return null;
+  // Passkey sign-in returns session only — return userId so caller can fetch profile
+  return { id: data.session.userId, name: "" };
 }
 
 /**
