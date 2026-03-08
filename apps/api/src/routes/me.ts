@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { db, users } from "@garona/db";
 import { eq } from "drizzle-orm";
+import { getUserRang } from "../middleware";
 
 const app = new Hono();
 
@@ -12,12 +13,14 @@ app.get("/", async (c) => {
   const [user] = await db.select().from(users).where(eq(users.id, userId));
   if (!user) return c.json({ error: "Utilisateur introuvable" }, 404);
 
+  const rang = await getUserRang(userId as string);
+
   return c.json({
     id: user.id,
     name: user.name,
     username: user.username,
     avatarUrl: user.avatarUrl,
-    rang: 1,
+    rang,
   });
 });
 
