@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
+import Constants from "expo-constants";
+import * as Updates from "expo-updates";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
@@ -9,6 +11,15 @@ import { CommentsSheet } from "../../components/CommentsSheet";
 import { FeedPostCard } from "../../components/FeedPostCard";
 import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 import { useFeedQuery } from "../../hooks/queries/useFeedQuery";
+
+function getAppVersion() {
+  const version = Constants.expoConfig?.version ?? "?";
+  const updateId = Updates.updateId;
+  if (updateId) {
+    return `v${version} · ${updateId.slice(0, 7)}`;
+  }
+  return `v${version}`;
+}
 
 type FeedTab = "discover" | "following";
 
@@ -25,9 +36,12 @@ export default function HomeScreen() {
       <View
         className="flex-row justify-between items-center px-4 py-2"
       >
-        <BrandText className="text-2xl text-accent tracking-tight">
-          Garona
-        </BrandText>
+        <View className="flex-row items-baseline gap-2">
+          <BrandText className="text-2xl text-accent tracking-tight">
+            Garona
+          </BrandText>
+          <Text className="text-[10px] text-text-muted">{getAppVersion()}</Text>
+        </View>
         <Pressable onPress={() => router.push("/guide")} hitSlop={8}>
           <Ionicons name="book-outline" size={24} color={colors.text} />
         </Pressable>
