@@ -12,6 +12,10 @@
       "web"
     ],
     "ios": {
+      "bundleIdentifier": "studio.econome.garona",
+      "associatedDomains": [
+        "webcredentials:garona.econome.studio"
+      ],
       "infoPlist": {
         "NSFaceIDUsageDescription": "Garona utilise Face ID pour sécuriser ton compte"
       }
@@ -47,6 +51,7 @@
       "url": "https://u.expo.dev/1d388319-75e6-4cf9-8dcf-5411976a918d"
     },
     "android": {
+      "package": "studio.econome.garona",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0f172a"
