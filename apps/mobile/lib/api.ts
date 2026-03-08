@@ -45,8 +45,10 @@ export type FeedPost = {
 };
 
 export const feedApi = {
-  get: (limit = 20, offset = 0) =>
-    apiFetch<FeedPost[]>("/api/feed", { params: { limit: String(limit), offset: String(offset) } }),
+  discover: (limit = 20, offset = 0) =>
+    apiFetch<FeedPost[]>("/api/feed/discover", { params: { limit: String(limit), offset: String(offset) } }),
+  following: (limit = 20, offset = 0) =>
+    apiFetch<FeedPost[]>("/api/feed/following", { params: { limit: String(limit), offset: String(offset) } }),
 };
 
 // ─── Posts ───

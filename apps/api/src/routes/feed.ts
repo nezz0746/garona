@@ -4,26 +4,31 @@ import { eq, desc, sql, and, inArray } from "drizzle-orm";
 
 const app = new Hono();
 
-// Get feed (posts from people you follow + your own)
-app.get("/", async (c) => {
+// Discovery feed — all posts, newest first
+app.get("/discover", async (c) => {
+  const userId = c.get("userId") || null;
+  const limit = Number(c.req.query("limit") || 20);
+  const offset = Number(c.req.query("offset") || 0);
+
+  const allPosts = await db
+    .select()
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .orderBy(desc(posts.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  return c.json(await enrichPosts(allPosts, userId));
+});
+
+// Following feed — posts from people you follow + your own
+app.get("/following", async (c) => {
   const userId = c.get("userId");
   const limit = Number(c.req.query("limit") || 20);
   const offset = Number(c.req.query("offset") || 0);
 
-  // If not authenticated, show discovery feed
-  if (!userId) {
-    const allPosts = await db
-      .select()
-      .from(posts)
-      .innerJoin(users, eq(posts.authorId, users.id))
-      .orderBy(desc(posts.createdAt))
-      .limit(limit)
-      .offset(offset);
+  if (!userId) return c.json([]);
 
-    return c.json(await enrichPosts(allPosts, null));
-  }
-
-  // Get who I follow
   const myFollows = await db
     .select({ followingId: follows.followingId })
     .from(follows)
@@ -31,19 +36,6 @@ app.get("/", async (c) => {
 
   const followingIds = myFollows.map((f) => f.followingId);
   followingIds.push(userId); // include own posts
-
-  if (followingIds.length === 0) {
-    // No follows — show latest posts from anyone (discovery)
-    const allPosts = await db
-      .select()
-      .from(posts)
-      .innerJoin(users, eq(posts.authorId, users.id))
-      .orderBy(desc(posts.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    return c.json(await enrichPosts(allPosts, userId));
-  }
 
   const feedPosts = await db
     .select()
@@ -55,6 +47,23 @@ app.get("/", async (c) => {
     .offset(offset);
 
   return c.json(await enrichPosts(feedPosts, userId));
+});
+
+// Default feed — kept for backward compat, returns discovery
+app.get("/", async (c) => {
+  const userId = c.get("userId") || null;
+  const limit = Number(c.req.query("limit") || 20);
+  const offset = Number(c.req.query("offset") || 0);
+
+  const allPosts = await db
+    .select()
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .orderBy(desc(posts.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  return c.json(await enrichPosts(allPosts, userId));
 });
 
 // Get single post
