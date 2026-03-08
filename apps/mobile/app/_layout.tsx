@@ -10,6 +10,7 @@ import { colors } from "@garona/shared";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as Updates from "expo-updates";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -72,6 +73,19 @@ export default function RootLayout() {
     Manrope_600SemiBold,
     Manrope_700Bold,
   });
+
+  // Check for OTA updates on mount
+  useEffect(() => {
+    if (__DEV__) return;
+    Updates.checkForUpdateAsync()
+      .then(({ isAvailable }) => {
+        if (isAvailable) return Updates.fetchUpdateAsync();
+      })
+      .then((result) => {
+        if (result?.isNew) Updates.reloadAsync();
+      })
+      .catch(() => {});
+  }, []);
 
   // Check for existing session on mount
   useEffect(() => {
