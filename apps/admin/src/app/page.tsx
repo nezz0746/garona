@@ -8,6 +8,8 @@ import { eq, and, sql } from "drizzle-orm";
 import { CreatePostForm } from "./components/CreatePostForm";
 import { LogoutButton } from "./components/LogoutButton";
 import { RootAccountSection } from "./components/RootAccountSection";
+import { UserList } from "./components/UserList";
+import { getUsers } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,7 @@ async function getRootAccount() {
 
 export default async function Home() {
   const { user: rootUser, vouchCount, rang } = await getRootAccount();
+  const allUsers = await getUsers();
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-zinc-950">
@@ -65,6 +68,9 @@ export default async function Home() {
           vouchCount={vouchCount}
           rang={rang}
         />
+
+        {/* User List with vouch controls */}
+        <UserList users={allUsers} />
 
         {/* Create Post (only if root account exists) */}
         {rootUser && <CreatePostForm rootUserId={rootUser.id} />}

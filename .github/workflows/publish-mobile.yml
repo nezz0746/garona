@@ -1,4 +1,4 @@
-name: Publish Mobile OTA
+name: Publish Mobile
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   update:
-    name: EAS Update
+    name: EAS Update (OTA)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -29,6 +29,34 @@ jobs:
           token: FBmMY-lxnKT1p_N_nSiNNjFPj2aaVyh2dYfVurk8
 
       - run: eas update --environment production --branch production --auto
+        env:
+          EXPO_PUBLIC_API_URL: https://api.garona.econome.studio
+          EXPO_PUBLIC_PASSKEY_RP_ID: garona.econome.studio
+
+  build-ios:
+    name: Build & Submit iOS
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: FBmMY-lxnKT1p_N_nSiNNjFPj2aaVyh2dYfVurk8
+
+      - run: eas build --platform ios --profile production --non-interactive --auto-submit
         env:
           EXPO_PUBLIC_API_URL: https://api.garona.econome.studio
           EXPO_PUBLIC_PASSKEY_RP_ID: garona.econome.studio

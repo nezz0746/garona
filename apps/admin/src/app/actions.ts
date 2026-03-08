@@ -1,8 +1,9 @@
 "use server";
 
-import { db, users, posts, postImages } from "@garona/db";
-import { eq } from "drizzle-orm";
+import { db, users, posts, postImages, vouches, computeRang, vouchWeight, ROOT_USERNAME } from "@garona/db";
+import { eq, and, sql, desc } from "drizzle-orm";
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 
 export async function createRootAccount() {
   const [existing] = await db
@@ -89,4 +90,127 @@ export async function createPostAsRoot(
   }
 
   return { success: true, postId: post.id };
+}
+
+export async function getUsers() {
+  const allUsers = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      username: users.username,
+      email: users.email,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt));
+
+  // Get vouch weight + rang for each user
+  const usersWithRang = await Promise.all(
+    allUsers.map(async (u) => {
+      const [result] = await db
+        .select({ total: sql<number>`coalesce(sum(${vouches.weight}), 0)` })
+        .from(vouches)
+        .where(and(eq(vouches.voucheeId, u.id), eq(vouches.revoked, false)));
+      const totalWeight = Number(result?.total ?? 0);
+      const rang = computeRang(totalWeight);
+
+      // Check if root has already vouched for this user
+      const [rootUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, ROOT_USERNAME));
+
+      let rootVouched = false;
+      if (rootUser) {
+        const [existing] = await db
+          .select()
+          .from(vouches)
+          .where(
+            and(
+              eq(vouches.voucherId, rootUser.id),
+              eq(vouches.voucheeId, u.id),
+              eq(vouches.revoked, false),
+            ),
+          );
+        rootVouched = !!existing;
+      }
+
+      return { ...u, rang, totalWeight, rootVouched };
+    }),
+  );
+
+  return usersWithRang;
+}
+
+export async function vouchAsRoot(userId: string) {
+  const [rootUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, ROOT_USERNAME));
+
+  if (!rootUser) {
+    return { error: "Root account does not exist" };
+  }
+
+  if (rootUser.id === userId) {
+    return { error: "Can't vouch yourself" };
+  }
+
+  // Check not already vouched
+  const [existing] = await db
+    .select()
+    .from(vouches)
+    .where(
+      and(
+        eq(vouches.voucherId, rootUser.id),
+        eq(vouches.voucheeId, userId),
+      ),
+    );
+
+  const weight = vouchWeight(1, true); // root always gets weight 3
+
+  if (existing && !existing.revoked) {
+    return { error: "Already vouched" };
+  }
+
+  if (existing) {
+    // Re-vouch
+    await db
+      .update(vouches)
+      .set({ revoked: false, weight })
+      .where(eq(vouches.id, existing.id));
+  } else {
+    await db.insert(vouches).values({
+      voucherId: rootUser.id,
+      voucheeId: userId,
+      weight,
+    });
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function revokeRootVouch(userId: string) {
+  const [rootUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, ROOT_USERNAME));
+
+  if (!rootUser) {
+    return { error: "Root account does not exist" };
+  }
+
+  await db
+    .update(vouches)
+    .set({ revoked: true })
+    .where(
+      and(
+        eq(vouches.voucherId, rootUser.id),
+        eq(vouches.voucheeId, userId),
+      ),
+    );
+
+  revalidatePath("/");
+  return { success: true };
 }

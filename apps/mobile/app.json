@@ -17,7 +17,8 @@
         "webcredentials:garona.econome.studio"
       ],
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Garona utilise Face ID pour sécuriser ton compte"
+        "NSFaceIDUsageDescription": "Garona utilise Face ID pour sécuriser ton compte",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "web": {

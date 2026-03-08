@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { db, vouches, users } from "@garona/db";
-import { vouchWeight, PERMISSION } from "@garona/db";
+import { vouchWeight, PERMISSION, ROOT_USERNAME } from "@garona/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requirePermission, getUserRang } from "../middleware";
 
@@ -56,7 +56,10 @@ app.post("/vouch/:userId", requirePermission(PERMISSION.VOUCH), async (c) => {
     return c.json({ error: "Already vouched" }, 409);
   }
 
-  const weight = vouchWeight(voucherRang);
+  // Check if voucher is the root garona account
+  const [voucher] = await db.select().from(users).where(eq(users.id, voucherId));
+  const isRoot = voucher?.username === ROOT_USERNAME;
+  const weight = vouchWeight(voucherRang, isRoot);
 
   if (existing.length > 0) {
     // Re-vouch (was revoked)
