@@ -50,6 +50,76 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
     setActiveIndex(idx);
   };
 
+  if (!hasImages) {
+    // Tweet-style layout for text-only posts
+    return (
+      <View className="border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+        <View className="flex-row px-3.5 pt-3 pb-2.5">
+          <Pressable onPress={() => router.push(`/user/${post.author.username}`)}>
+            <Avatar
+              uri={post.author.avatarUrl}
+              name={post.author.name}
+              size={40}
+            />
+          </Pressable>
+          <View className="flex-1 ml-3">
+            {/* Header row */}
+            <View className="flex-row items-center justify-between">
+              <Pressable
+                className="flex-row items-center gap-1 flex-shrink"
+                onPress={() => router.push(`/user/${post.author.username}`)}
+              >
+                <Text className="text-text font-bold text-[15px]" numberOfLines={1}>
+                  {post.author.name}
+                </Text>
+                <Text className="text-text-muted text-[14px]" numberOfLines={1}>
+                  @{post.author.username}
+                </Text>
+                <Text className="text-text-muted text-[14px]">
+                  · {timeAgo(post.createdAt)}
+                </Text>
+              </Pressable>
+              <IconButton name="ellipsis-horizontal" size={18} />
+            </View>
+
+            {/* Body */}
+            <Text className="text-text text-[15px] leading-[22px] mt-1">
+              {post.caption}
+            </Text>
+
+            {/* Engagement row */}
+            <View className="flex-row items-center mt-2.5 -ml-2">
+              <View className="flex-row items-center flex-1">
+                <IconButton name="chatbubble-outline" size={18} onPress={onOpenComments} />
+                <Text className="text-text-muted text-[13px] ml-0.5">
+                  {post.comments || ""}
+                </Text>
+              </View>
+              <View className="flex-row items-center flex-1">
+                <IconButton name="repeat-outline" size={18} />
+              </View>
+              <View className="flex-row items-center flex-1">
+                <IconButton
+                  name={post.liked ? "heart" : "heart-outline"}
+                  size={18}
+                  color={post.liked ? colors.like : colors.textMuted}
+                  onPress={onLike}
+                />
+                <Text className="text-text-muted text-[13px] ml-0.5">
+                  {post.likes || ""}
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <IconButton name="share-outline" size={18} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Instagram-style layout for image posts
   return (
     <View className="mb-2">
       <View className="flex-row items-center justify-between px-3 py-2.5">
@@ -69,55 +139,46 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
         <IconButton name="ellipsis-horizontal" size={20} />
       </View>
 
-      {/* Image(s) or text-only body */}
-      {hasImages ? (
-        isCarousel ? (
-          <View>
-            <FlatList
-              data={images}
-              keyExtractor={(_, i) => `img-${i}`}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={onScroll}
-              scrollEventThrottle={16}
-              renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item }}
-                  style={{ width: MAX_WIDTH, height: MAX_WIDTH }}
-                  resizeMode="cover"
-                />
-              )}
-            />
-            {/* Dots */}
-            <View className="flex-row justify-center gap-1.5 absolute bottom-3 left-0 right-0">
-              {images.map((imageUrl, i) => (
-                <View
-                  key={imageUrl}
-                  className={`w-1.5 h-1.5 rounded-full bg-white/50 ${i === activeIndex ? "bg-white" : ""}`}
-                />
-              ))}
-            </View>
-            {/* Counter */}
-            <View className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 rounded-xl">
-              <Text className="text-white text-xs font-semibold">
-                {activeIndex + 1}/{images.length}
-              </Text>
-            </View>
-          </View>
-        ) : (
-          <Image
-            source={{ uri: images[0] }}
-            style={{ width: MAX_WIDTH, height: MAX_WIDTH, alignSelf: "center" }}
-            resizeMode="cover"
+      {isCarousel ? (
+        <View>
+          <FlatList
+            data={images}
+            keyExtractor={(_, i) => `img-${i}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            renderItem={({ item }) => (
+              <Image
+                source={{ uri: item }}
+                style={{ width: MAX_WIDTH, height: MAX_WIDTH }}
+                resizeMode="cover"
+              />
+            )}
           />
-        )
-      ) : (
-        <View className="px-4 py-5" style={{ minHeight: 80 }}>
-          <Text className="text-text text-[15px] leading-[22px]">
-            {post.caption}
-          </Text>
+          {/* Dots */}
+          <View className="flex-row justify-center gap-1.5 absolute bottom-3 left-0 right-0">
+            {images.map((imageUrl, i) => (
+              <View
+                key={imageUrl}
+                className={`w-1.5 h-1.5 rounded-full bg-white/50 ${i === activeIndex ? "bg-white" : ""}`}
+              />
+            ))}
+          </View>
+          {/* Counter */}
+          <View className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 rounded-xl">
+            <Text className="text-white text-xs font-semibold">
+              {activeIndex + 1}/{images.length}
+            </Text>
+          </View>
         </View>
+      ) : (
+        <Image
+          source={{ uri: images[0] }}
+          style={{ width: MAX_WIDTH, height: MAX_WIDTH, alignSelf: "center" }}
+          resizeMode="cover"
+        />
       )}
 
       <View className="flex-row justify-between items-center px-3 py-2">
@@ -148,7 +209,7 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
         <Text className="text-text font-semibold text-[13px]">
           {post.likes.toLocaleString()} j'aime
         </Text>
-        {hasImages && post.caption && (
+        {post.caption && (
           <Text className="text-text text-[13px] leading-[18px]">
             <Text className="text-text font-semibold text-[13px]">
               {post.author.username}

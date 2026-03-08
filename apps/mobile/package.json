@@ -8,6 +8,7 @@
     "dev:web": "expo start --web",
     "build": "expo export -p web",
     "start": "expo serve",
+    "publish": "source .env.production && eas update --environment production --branch production --auto",
     "lint": "echo ok"
   },
   "dependencies": {
