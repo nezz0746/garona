@@ -40,6 +40,7 @@ app.post("/", async (c) => {
       name: name.trim(),
       email,
       password,
+      username: cleanUsername,
     },
     headers: c.req.raw.headers,
     asResponse: true,
@@ -50,12 +51,6 @@ app.post("/", async (c) => {
   }
 
   const authData = await authResponse.json();
-
-  // Update with username (Better Auth doesn't handle this field)
-  await db
-    .update(users)
-    .set({ username: cleanUsername })
-    .where(eq(users.id, authData.user.id));
 
   // Forward session cookies from Better Auth
   authResponse.headers.forEach((value, key) => {
