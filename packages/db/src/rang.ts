@@ -48,7 +48,7 @@ export const ROOT_USERNAME = "garona";
 
 // Vouch weight based on voucher's rang
 export function vouchWeight(voucherRang: RangLevel, isRoot = false): number {
-  if (isRoot) return 3; // root garona account always gives weight 3
+  if (isRoot) return 5; // root garona account always gives weight 5
   switch (voucherRang) {
     case 0:
       return 0; // rang 0 can't vouch
