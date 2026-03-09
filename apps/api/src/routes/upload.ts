@@ -65,6 +65,45 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
   return c.json({ url: publicUrl, key });
 });
 
+// Avatar upload (no rang requirement, just auth)
+app.post("/avatar", async (c) => {
+  const userId = c.get("userId");
+  if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+  let body: Record<string, string | File>;
+  try {
+    body = await c.req.parseBody();
+  } catch (e: unknown) {
+    console.error("[upload] Failed to parse multipart body:", e);
+    return c.json({ error: "Invalid multipart body" }, 400);
+  }
+
+  const file = body["file"];
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: "No file provided" }, 400);
+  }
+
+  const ext = file.type === "image/png" ? "png" : "jpg";
+  const key = `avatars/${userId}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    await s3.send(new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: new Uint8Array(arrayBuffer),
+      ContentType: file.type,
+    }));
+  } catch (e: unknown) {
+    console.error("[upload] S3 avatar upload error:", e);
+    return c.json({ error: "Upload failed" }, 500);
+  }
+
+  const baseUrl = process.env.PUBLIC_API_URL || new URL(c.req.url).origin;
+  const publicUrl = `${baseUrl}/api/upload/images/${key}`;
+  return c.json({ url: publicUrl, key });
+});
+
 // Proxy S3 images so mobile can access them via API URL
 app.get("/images/:key{.+}", async (c) => {
   const key = c.req.param("key");

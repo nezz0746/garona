@@ -55,7 +55,7 @@ export default function EditProfileScreen() {
     const formData = new FormData();
     formData.append("file", { uri, name: filename, type } as any);
 
-    const res = await fetch(`${API_URL}/api/upload`, {
+    const res = await fetch(`${API_URL}/api/upload/avatar`, {
       method: "POST",
       body: formData,
       credentials: "include",
