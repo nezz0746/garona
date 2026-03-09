@@ -46,7 +46,6 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
       <KeyboardAvoidingView
         className="flex-1 bg-bg"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
       >
         {/* Header */}
         <View className="items-center py-3 border-b border-border" style={{ borderBottomWidth: 0.5 }}>

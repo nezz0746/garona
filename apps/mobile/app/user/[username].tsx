@@ -42,12 +42,12 @@ function timeAgo(dateStr: string): string {
   return `${days}j`;
 }
 
-function TextPostRow({ item, username }: { item: UserPost; username: string }) {
+function TextPostRow({ item }: { item: UserPost }) {
   return (
     <Pressable
       className="px-4 py-3 border-b border-border"
       style={{ borderBottomWidth: 0.5 }}
-      onPress={() => router.push(`/posts/${username}?postId=${item.id}`)}
+      onPress={() => router.push(`/post/${item.id}`)}
     >
       <Text className="text-text text-[15px] leading-[22px]" numberOfLines={4}>
         {item.caption}
@@ -195,7 +195,7 @@ export default function UserProfileScreen() {
             </View>
           )}
           renderItem={({ item }) => (
-            <TextPostRow item={item} username={username} />
+            <TextPostRow item={item} />
           )}
         />
         <UsersListSheet

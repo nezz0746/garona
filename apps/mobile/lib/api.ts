@@ -58,9 +58,20 @@ export const feedApi = {
     apiFetch<FeedPost[]>("/api/feed/discover", { params: { limit: String(limit), offset: String(offset) } }),
   following: (limit = 20, offset = 0) =>
     apiFetch<FeedPost[]>("/api/feed/following", { params: { limit: String(limit), offset: String(offset) } }),
+  post: (postId: string) =>
+    apiFetch<FeedPost>(`/api/feed/${postId}`),
 };
 
 // ─── Posts ───
+export type Comment = {
+  id: string;
+  postId: string;
+  authorId: string;
+  text: string;
+  createdAt: string;
+  author: { username: string; name: string; avatarUrl: string | null };
+};
+
 export const postsApi = {
   create: (imageUrls: string[], caption?: string) =>
     apiFetch<{ id: string }>("/api/posts", { method: "POST", body: JSON.stringify({ imageUrls, caption }) }),
@@ -69,7 +80,7 @@ export const postsApi = {
   comment: (postId: string, text: string) =>
     apiFetch<{ id: string }>(`/api/posts/${postId}/comment`, { method: "POST", body: JSON.stringify({ text }) }),
   comments: (postId: string) =>
-    apiFetch<{ id: string; authorId: string; text: string; createdAt: string }[]>(`/api/posts/${postId}/comments`),
+    apiFetch<Comment[]>(`/api/posts/${postId}/comments`),
   delete: (postId: string) =>
     apiFetch<{ deleted: boolean }>(`/api/posts/${postId}`, { method: "DELETE" }),
   likes: (postId: string) =>

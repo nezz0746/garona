@@ -287,6 +287,10 @@ function RootLayout() {
                 options={{ presentation: "card" }}
               />
               <Stack.Screen
+                name="post/[id]"
+                options={{ presentation: "card" }}
+              />
+              <Stack.Screen
                 name="edit-profile"
                 options={{ presentation: "modal" }}
               />

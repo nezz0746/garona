@@ -108,19 +108,21 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
               <IconButton name="ellipsis-horizontal" size={18} />
             </View>
 
-            {/* Body */}
-            <RichText className="text-text text-[15px] leading-[22px] mt-1">
-              {post.caption || ""}
-            </RichText>
+            {/* Body — tappable to open thread */}
+            <Pressable onPress={() => router.push(`/post/${post.id}`)}>
+              <RichText className="text-text text-[15px] leading-[22px] mt-1">
+                {post.caption || ""}
+              </RichText>
 
-            {/* Link previews */}
-            {post.linkPreviews && post.linkPreviews.length > 0 && (
-              <View>
-                {post.linkPreviews.map((lp) => (
-                  <LinkPreviewCard key={lp.url} preview={lp} />
-                ))}
-              </View>
-            )}
+              {/* Link previews */}
+              {post.linkPreviews && post.linkPreviews.length > 0 && (
+                <View>
+                  {post.linkPreviews.map((lp) => (
+                    <LinkPreviewCard key={lp.url} preview={lp} />
+                  ))}
+                </View>
+              )}
+            </Pressable>
 
             {/* Engagement row */}
             <View className="flex-row items-center mt-2.5 -ml-2">
