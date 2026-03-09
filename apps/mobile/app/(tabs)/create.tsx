@@ -21,9 +21,12 @@ type GalleryAsset = {
   uri: string;
 };
 
+type PostMode = "choose" | "image" | "text";
+
 export default function CreateScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const [mode, setMode] = useState<PostMode>("choose");
   const [selected, setSelected] = useState<string[]>([]);
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -36,8 +39,9 @@ export default function CreateScreen() {
   const rang = user?.rang ?? 0;
   const canPost = rang >= 2;
 
-  // Load gallery
+  // Load gallery only when entering image mode
   useEffect(() => {
+    if (mode !== "image") return;
     (async () => {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") return;
@@ -48,7 +52,6 @@ export default function CreateScreen() {
         first: 100,
         sortBy: [MediaLibrary.SortBy.creationTime],
       });
-      // Get actual file URIs (ph:// doesn't work with Image component)
       const assets = await Promise.all(
         media.assets.map(async (a) => {
           const info = await MediaLibrary.getAssetInfoAsync(a);
@@ -57,7 +60,7 @@ export default function CreateScreen() {
       );
       setGallery(assets);
     })();
-  }, []);
+  }, [mode]);
 
   const toggleSelect = (uri: string) => {
     setSelected((prev) => {
@@ -118,12 +121,23 @@ export default function CreateScreen() {
       setSelected([]);
       setCaption("");
       setShowCaption(false);
-      Alert.alert("Publié ! 🎉", selected.length > 0 ? "Ta publication est maintenant visible" : "Ton message est maintenant visible");
+      Alert.alert("Publié !", mode === "image" ? "Ta publication est maintenant visible" : "Ton message est maintenant visible");
+      setSelected([]);
+      setCaption("");
+      setShowCaption(false);
+      setMode("choose");
     } catch (e: any) {
       Alert.alert("Erreur", e.message || "Impossible de publier");
     } finally {
       setUploading(false);
     }
+  };
+
+  const resetToChooser = () => {
+    setSelected([]);
+    setCaption("");
+    setShowCaption(false);
+    setMode("choose");
   };
 
   if (!canPost) {
@@ -134,29 +148,107 @@ export default function CreateScreen() {
         </View>
         <Text className="text-xl font-bold text-text">Rang 2 requis</Text>
         <Text className="text-sm text-text-muted text-center leading-[22px] mt-2">
-          Tu dois être au moins Habitant (3 parrainages) pour publier des photos.
+          Tu dois être au moins rang 2 pour publier.
         </Text>
       </View>
     );
   }
 
+  // ── Post type chooser ──
+  if (mode === "choose") {
+    return (
+      <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+        <View className="px-4 py-3">
+          <Text className="text-lg font-bold text-text">Nouvelle publication</Text>
+        </View>
+        <View className="flex-1 justify-center items-center gap-4 px-8">
+          <Pressable
+            onPress={() => setMode("image")}
+            className="w-full bg-surface rounded-2xl p-5 flex-row items-center gap-4"
+          >
+            <View className="w-14 h-14 rounded-full bg-primary/10 justify-center items-center">
+              <Ionicons name="images" size={28} color={colors.primary} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-text">Photo</Text>
+              <Text className="text-sm text-text-muted mt-0.5">Partage des images depuis ta galerie</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </Pressable>
+          <Pressable
+            onPress={() => setMode("text")}
+            className="w-full bg-surface rounded-2xl p-5 flex-row items-center gap-4"
+          >
+            <View className="w-14 h-14 rounded-full bg-accent/10 justify-center items-center">
+              <Ionicons name="chatbubble" size={26} color={colors.accent} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-text">Texte</Text>
+              <Text className="text-sm text-text-muted mt-0.5">Publie un message sans image</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Text-only post ──
+  if (mode === "text") {
+    return (
+      <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+        <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+          <Pressable onPress={resetToChooser}>
+            <Ionicons name="arrow-back" size={26} color={colors.text} />
+          </Pressable>
+          <Text className="text-lg font-bold text-text">Nouveau message</Text>
+          <Pressable
+            onPress={handlePost}
+            disabled={uploading || !caption.trim()}
+            style={{ opacity: uploading || !caption.trim() ? 0.4 : 1 }}
+          >
+            {uploading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text className="text-primary font-bold text-base">Partager</Text>
+            )}
+          </Pressable>
+        </View>
+        <ScrollView contentContainerClassName="p-4">
+          <TextInput
+            className="text-text text-[16px] leading-[24px] min-h-[200px]"
+            style={{ textAlignVertical: "top" }}
+            placeholder="Quoi de neuf ?"
+            placeholderTextColor={colors.textMuted}
+            value={caption}
+            onChangeText={setCaption}
+            multiline
+            maxLength={500}
+            autoFocus
+          />
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ── Image post flow ──
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-        <Pressable onPress={() => { setSelected([]); setCaption(""); setShowCaption(false); }}>
-          <Ionicons name="close" size={28} color={colors.text} />
+        <Pressable onPress={showCaption ? () => setShowCaption(false) : resetToChooser}>
+          <Ionicons name="arrow-back" size={26} color={colors.text} />
         </Pressable>
-        <Text className="text-lg font-bold text-text">Nouvelle publication</Text>
+        <Text className="text-lg font-bold text-text">Nouvelle photo</Text>
         <Pressable
           onPress={showCaption ? handlePost : () => setShowCaption(true)}
-          disabled={uploading}
-          style={{ opacity: uploading ? 0.4 : 1 }}
+          disabled={uploading || selected.length === 0}
+          style={{ opacity: uploading || selected.length === 0 ? 0.4 : 1 }}
         >
           {uploading ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text className="text-primary font-bold text-base" style={{ opacity: showCaption && selected.length === 0 && !caption.trim() ? 0.4 : 1 }}>{showCaption ? "Partager" : "Suivant"}</Text>
+            <Text className="text-primary font-bold text-base">{showCaption ? "Partager" : "Suivant"}</Text>
           )}
         </Pressable>
       </View>
@@ -201,7 +293,6 @@ export default function CreateScreen() {
                     <Text className="text-white text-xs font-semibold">{previewIndex + 1}/{selected.length}</Text>
                   </View>
                 )}
-                {/* Swipe through selected */}
                 {selected.length > 1 && (
                   <View className="absolute inset-0 flex-row items-center px-2">
                     {previewIndex > 0 && (
