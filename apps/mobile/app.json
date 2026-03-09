@@ -30,6 +30,14 @@
       "expo-router",
       "expo-sharing",
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/icon.png",
+          "imageWidth": 128
+        }
+      ],
+      [
         "expo-local-authentication",
         {
           "faceIDPermission": "Garona utilise Face ID pour sécuriser ton compte"

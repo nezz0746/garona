@@ -33,8 +33,5 @@ export function useLikeMutation() {
         qc.setQueryData(key, data);
       }
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["feed"] });
-    },
   });
 }

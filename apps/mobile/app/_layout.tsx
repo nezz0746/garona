@@ -9,16 +9,18 @@ import {
 import { colors } from "@garona/shared";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as Updates from "expo-updates";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   Text,
   TextInput,
   View,
 } from "react-native";
+
+SplashScreen.preventAutoHideAsync();
 import { LaunchScreen } from "../components/LaunchScreen";
 import { SigninSheet } from "../components/SigninSheet";
 import { SignupForm } from "../components/SignupForm";
@@ -74,24 +76,26 @@ export default function RootLayout() {
     Manrope_700Bold,
   });
 
-  // Check for OTA updates on mount
+  // OTA update check + session check + fonts → then hide splash
   useEffect(() => {
-    if (__DEV__) return;
-    Updates.checkForUpdateAsync()
-      .then(({ isAvailable }) => {
-        if (isAvailable) return Updates.fetchUpdateAsync();
-      })
-      .then((result) => {
-        if (result?.isNew) Updates.reloadAsync();
-      })
-      .catch(() => {});
-  }, []);
+    async function prepare() {
+      // 1. Check for OTA updates (production only)
+      if (!__DEV__) {
+        try {
+          const { isAvailable } = await Updates.checkForUpdateAsync();
+          if (isAvailable) {
+            const result = await Updates.fetchUpdateAsync();
+            if (result.isNew) {
+              await Updates.reloadAsync();
+              return; // app will restart
+            }
+          }
+        } catch {}
+      }
 
-  // Check for existing session on mount
-  useEffect(() => {
-    meApi
-      .get()
-      .then((result) => {
+      // 2. Check for existing session
+      try {
+        const result = await meApi.get();
         setUser({
           id: result.id,
           name: result.name,
@@ -100,15 +104,24 @@ export default function RootLayout() {
           rang: result.rang,
         });
         setAppState("authenticated");
-      })
-      .catch(() => {
+      } catch {
         setAppState("launch");
-      });
+      }
+    }
+
+    prepare();
   }, []);
 
   useEffect(() => {
     if (fontsLoaded) applyGlobalFontDefaults();
   }, [fontsLoaded]);
+
+  // Hide splash once everything is ready
+  useEffect(() => {
+    if (fontsLoaded && appState !== "loading") {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, appState]);
 
   const handleSignedUp = useCallback((result: SignupResult) => {
     setUser({
@@ -154,14 +167,9 @@ export default function RootLayout() {
     setAppState("authenticated");
   }, []);
 
-  // Loading — checking session
+  // Loading — splash screen is still visible
   if (!fontsLoaded || appState === "loading") {
-    return (
-      <View className="flex-1 bg-bg justify-center items-center">
-        <StatusBar style="dark" />
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return null;
   }
 
   // Launch screen
