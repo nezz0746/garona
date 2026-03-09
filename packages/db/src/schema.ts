@@ -207,6 +207,25 @@ export const stories = pgTable(
   ],
 );
 
+// ─── Push Tokens ───
+export const pushTokens = pgTable(
+  "push_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    platform: text("platform").notNull(), // "ios" | "android"
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("push_tokens_token_idx").on(t.token),
+    index("push_tokens_user_idx").on(t.userId),
+  ],
+);
+
 // ─── Link Previews ───
 export const linkPreviews = pgTable(
   "link_previews",

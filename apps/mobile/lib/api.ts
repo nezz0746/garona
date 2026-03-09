@@ -164,6 +164,20 @@ export const uploadApi = {
     ),
 };
 
+// ─── Push Notifications ───
+export const pushApi = {
+  register: (token: string, platform: string) =>
+    apiFetch<{ registered: boolean }>("/api/push/register", {
+      method: "POST",
+      body: JSON.stringify({ token, platform }),
+    }),
+  unregister: (token: string) =>
+    apiFetch<{ unregistered: boolean }>("/api/push/unregister", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+};
+
 // ─── Vouches ───
 export type VouchInfo = {
   rang: number;

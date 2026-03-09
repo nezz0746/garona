@@ -36,6 +36,8 @@ Sentry.init({
 });
 
 SplashScreen.preventAutoHideAsync();
+import { ToastProvider } from "../components/Toast";
+import { useNotifications } from "../hooks/useNotifications";
 import { LaunchScreen } from "../components/LaunchScreen";
 import { SigninSheet } from "../components/SigninSheet";
 import { SignupForm } from "../components/SignupForm";
@@ -43,6 +45,11 @@ import { TutorialSlides } from "../components/TutorialSlides";
 import { meApi, type SignupResult } from "../lib/api";
 import { AuthContext, type AuthUser } from "../lib/auth";
 import { clearAllQueries, queryClient } from "../lib/queryClient";
+
+function NotificationRegistrar() {
+  useNotifications();
+  return null;
+}
 
 type AppState = "loading" | "launch" | "signup" | "tutorial" | "authenticated";
 
@@ -260,29 +267,32 @@ function RootLayout() {
           },
         }}
       >
-        <View className="flex-1 bg-bg">
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: colors.bg },
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="user/[username]"
-              options={{ presentation: "card" }}
-            />
-            <Stack.Screen
-              name="posts/[username]"
-              options={{ presentation: "card" }}
-            />
-            <Stack.Screen
-              name="edit-profile"
-              options={{ presentation: "modal" }}
-            />
-          </Stack>
-        </View>
+        <ToastProvider>
+          <NotificationRegistrar />
+          <View className="flex-1 bg-bg">
+            <StatusBar style="dark" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.bg },
+              }}
+            >
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen
+                name="user/[username]"
+                options={{ presentation: "card" }}
+              />
+              <Stack.Screen
+                name="posts/[username]"
+                options={{ presentation: "card" }}
+              />
+              <Stack.Screen
+                name="edit-profile"
+                options={{ presentation: "modal" }}
+              />
+            </Stack>
+          </View>
+        </ToastProvider>
       </AuthContext.Provider>
     </QueryClientProvider>
   );

@@ -2,6 +2,7 @@ import { db, follows, posts, users, vouches, PERMISSION } from "@garona/db";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { getUserRang, requirePermission } from "../middleware";
+import { notifyUser } from "../lib/push";
 
 const app = new Hono();
 
@@ -92,6 +93,19 @@ app.post("/:username/follow", requirePermission(PERMISSION.FOLLOW), async (c) =>
 
   try {
     await db.insert(follows).values({ followerId, followingId: target.id });
+
+    // Notify followed user (fire-and-forget)
+    const fId = followerId as string;
+    db.select({ name: users.name, username: users.username }).from(users).where(eq(users.id, fId)).then(([follower]) => {
+      if (follower) {
+        notifyUser(target.id, {
+          title: "Nouvel abonné",
+          body: `${follower.name} a commencé à te suivre`,
+          data: { type: "follow", username: follower.username },
+        }).catch(() => {});
+      }
+    });
+
     return c.json({ following: true });
   } catch {
     await db

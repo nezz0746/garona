@@ -38,6 +38,7 @@
         }
       ],
       "expo-web-browser",
+      "expo-notifications",
       [
         "@sentry/react-native/expo",
         {

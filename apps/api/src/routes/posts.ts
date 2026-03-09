@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { requirePermission } from "../middleware";
 import { PERMISSION } from "@garona/db";
 import { scrapeMetadata } from "../lib/scrape";
+import { notifyUser } from "../lib/push";
 
 const app = new Hono();
 
@@ -91,6 +92,24 @@ app.post("/:postId/like", requirePermission(PERMISSION.LIKE), async (c) => {
 
   try {
     await db.insert(likes).values({ postId, userId });
+
+    // Notify post author (fire-and-forget, skip if self-like)
+    const likerId = userId as string;
+    const likedPostId = postId as string;
+    db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, likedPostId)).then(([post]) => {
+      if (post && post.authorId !== likerId) {
+        db.select({ name: users.name }).from(users).where(eq(users.id, likerId)).then(([liker]) => {
+          if (liker) {
+            notifyUser(post.authorId, {
+              title: "Nouveau like",
+              body: `${liker.name} a aimé ta publication`,
+              data: { type: "like", postId: likedPostId },
+            }).catch(() => {});
+          }
+        });
+      }
+    });
+
     return c.json({ liked: true });
   } catch {
     // Already liked — unlike
@@ -113,6 +132,23 @@ app.post("/:postId/comment", requirePermission(PERMISSION.COMMENT), async (c) =>
     .insert(comments)
     .values({ postId, authorId: userId, text: text.trim() })
     .returning();
+
+  // Notify post author (fire-and-forget, skip if self-comment)
+  const commenterId = userId as string;
+  const commentedPostId = postId as string;
+  db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, commentedPostId)).then(([post]) => {
+    if (post && post.authorId !== commenterId) {
+      db.select({ name: users.name }).from(users).where(eq(users.id, commenterId)).then(([commenter]) => {
+        if (commenter) {
+          notifyUser(post.authorId, {
+            title: "Nouveau commentaire",
+            body: `${commenter.name} a commenté : ${text.trim().slice(0, 80)}`,
+            data: { type: "comment", postId: commentedPostId },
+          }).catch(() => {});
+        }
+      });
+    }
+  });
 
   return c.json(comment, 201);
 });

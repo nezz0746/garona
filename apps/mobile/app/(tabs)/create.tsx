@@ -5,11 +5,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import * as MediaLibrary from "expo-media-library";
 import * as ImagePicker from "expo-image-picker";
 import { colors } from "@garona/shared";
 import { API_URL, useAuth } from "../../lib/auth";
 import { useCreatePostMutation } from "../../hooks/mutations/useCreatePostMutation";
+import { useToast } from "../../components/Toast";
 
 const SCREEN_W = Dimensions.get("window").width;
 const GALLERY_COLS = 4;
@@ -35,6 +37,7 @@ export default function CreateScreen() {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [showCaption, setShowCaption] = useState(false);
   const createPostMutation = useCreatePostMutation();
+  const { show: showToast } = useToast();
 
   const rang = user?.rang ?? 0;
   const canPost = rang >= 2;
@@ -134,13 +137,17 @@ export default function CreateScreen() {
         ? await Promise.all(selected.map(uploadImage))
         : [];
       await createPostMutation.mutateAsync({ imageUrls, caption: caption || undefined });
-      Alert.alert("Publié !", mode === "image" ? "Ta publication est maintenant visible" : "Ton message est maintenant visible");
       setSelected([]);
       setCaption("");
       setShowCaption(false);
       setMode("choose");
+      showToast({
+        message: mode === "image" ? "Ta publication est maintenant visible" : "Ton message est maintenant visible",
+        type: "success",
+      });
+      router.navigate("/(tabs)/profile");
     } catch (e: any) {
-      Alert.alert("Erreur", e.message || "Impossible de publier");
+      showToast({ message: e.message || "Impossible de publier", type: "error" });
     } finally {
       setUploading(false);
     }

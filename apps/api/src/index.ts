@@ -12,6 +12,7 @@ import activityRoutes from "./routes/activity";
 import signupRoutes from "./routes/signup";
 import meRoutes from "./routes/me";
 import linkRoutes from "./routes/links";
+import pushRoutes from "./routes/push";
 
 const app = new Hono();
 
@@ -71,6 +72,7 @@ app.route("/api/activity", activityRoutes);
 app.route("/api/signup", signupRoutes);
 app.route("/api/me", meRoutes);
 app.route("/api/links", linkRoutes);
+app.route("/api/push", pushRoutes);
 
 // Health
 app.get("/", (c) => c.json({ name: "Garona API", status: "ok" }));
