@@ -73,6 +73,22 @@ export default function CreateScreen() {
     });
   };
 
+  const pickTextImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      selectionLimit: 4,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setSelected((prev) => {
+        const newUris = result.assets.map((a) => a.uri);
+        const combined = [...prev, ...newUris];
+        return combined.slice(0, 4);
+      });
+    }
+  };
+
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
@@ -181,7 +197,7 @@ export default function CreateScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-text">Texte</Text>
-              <Text className="text-sm text-text-muted mt-0.5">Publie un message sans image</Text>
+              <Text className="text-sm text-text-muted mt-0.5">Publie un message texte</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
@@ -211,7 +227,8 @@ export default function CreateScreen() {
             )}
           </Pressable>
         </View>
-        <ScrollView contentContainerClassName="p-4">
+
+        <ScrollView className="flex-1" contentContainerClassName="p-4">
           <TextInput
             className="text-text text-[16px] leading-[24px] min-h-[200px]"
             style={{ textAlignVertical: "top" }}
@@ -223,7 +240,37 @@ export default function CreateScreen() {
             maxLength={500}
             autoFocus
           />
+
+          {/* Attached image thumbnails */}
+          {selected.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
+              {selected.map((uri, i) => (
+                <View key={uri} className="mr-2 relative">
+                  <Image source={{ uri }} className="w-20 h-20 rounded-lg" />
+                  <Pressable
+                    className="absolute -top-1.5 -right-1.5 bg-black/70 w-5 h-5 rounded-full justify-center items-center"
+                    onPress={() => setSelected((prev) => prev.filter((_, j) => j !== i))}
+                  >
+                    <Ionicons name="close" size={12} color="#fff" />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </ScrollView>
+
+        {/* Bottom toolbar */}
+        <View className="flex-row items-center px-4 py-2.5 border-t border-border" style={{ borderTopWidth: 0.5 }}>
+          <Pressable
+            onPress={pickTextImages}
+            disabled={selected.length >= 4}
+            style={{ opacity: selected.length >= 4 ? 0.4 : 1 }}
+          >
+            <Ionicons name="image-outline" size={24} color={colors.primary} />
+          </Pressable>
+          <View className="flex-1" />
+          <Text className="text-text-muted text-xs">{caption.length}/500</Text>
+        </View>
       </View>
     );
   }
