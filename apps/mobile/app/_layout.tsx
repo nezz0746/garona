@@ -233,6 +233,9 @@ export default function RootLayout() {
           isLoading: false,
           signIn: () => {},
           signOut,
+          updateUser: (updates) => {
+            setUser((prev) => prev ? { ...prev, ...updates } : prev);
+          },
         }}
       >
         <View className="flex-1 bg-bg">
@@ -251,6 +254,10 @@ export default function RootLayout() {
             <Stack.Screen
               name="posts/[username]"
               options={{ presentation: "card" }}
+            />
+            <Stack.Screen
+              name="edit-profile"
+              options={{ presentation: "modal" }}
             />
           </Stack>
         </View>

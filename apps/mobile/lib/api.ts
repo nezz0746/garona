@@ -139,6 +139,11 @@ export const signupApi = {
 // ─── Me (session-based) ───
 export const meApi = {
   get: () => apiFetch<SignupResult>("/api/me"),
+  update: (data: { name?: string; bio?: string; avatarUrl?: string }) =>
+    apiFetch<SignupResult>("/api/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 };
 
 // ─── Upload ───

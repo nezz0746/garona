@@ -94,7 +94,10 @@ export default function ProfileScreen() {
 
       {/* Buttons */}
       <View className="flex-row px-4 pt-4 gap-1.5">
-        <Pressable className="flex-1 bg-surface rounded-lg py-[7px] items-center border border-border">
+        <Pressable
+          className="flex-1 bg-surface rounded-lg py-[7px] items-center border border-border"
+          onPress={() => router.push("/edit-profile")}
+        >
           <Text className="text-primary font-semibold text-[13px]">Modifier le profil</Text>
         </Pressable>
         <Pressable className="flex-1 bg-surface rounded-lg py-[7px] items-center border border-border" onPress={() => setShareVisible(true)}>

@@ -13,6 +13,7 @@ export type AuthContextType = {
   isLoading: boolean;
   signIn: () => void;
   signOut: () => void;
+  updateUser: (updates: Partial<NonNullable<AuthUser>>) => void;
 };
 
 export const AuthContext = createContext<AuthContextType>({
@@ -20,6 +21,7 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   signIn: () => {},
   signOut: () => {},
+  updateUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
