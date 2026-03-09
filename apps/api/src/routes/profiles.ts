@@ -135,6 +135,7 @@ app.get("/:username/posts", async (c) => {
     .select({
       id: posts.id,
       imageUrl: posts.imageUrl,
+      caption: posts.caption,
       createdAt: posts.createdAt,
     })
     .from(posts)

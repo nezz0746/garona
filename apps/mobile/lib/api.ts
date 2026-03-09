@@ -84,6 +84,7 @@ export type Profile = {
 export type UserPost = {
   id: string;
   imageUrl: string | null;
+  caption: string | null;
   createdAt: string;
 };
 

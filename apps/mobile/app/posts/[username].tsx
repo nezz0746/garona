@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, ScrollView } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,14 +7,29 @@ import { colors } from "@garona/shared";
 import { FeedPostCard } from "../../components/FeedPostCard";
 import { CommentsSheet } from "../../components/CommentsSheet";
 import { useProfilePostsFeedQuery } from "../../hooks/queries/useProfilePostsFeedQuery";
+import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 
 export default function UserPostsScreen() {
-  const { username, startIndex } = useLocalSearchParams<{ username: string; startIndex?: string }>();
+  const { username, startIndex, postId, type } = useLocalSearchParams<{
+    username: string;
+    startIndex?: string;
+    postId?: string;
+    type?: string;
+  }>();
   const insets = useSafeAreaInsets();
-  const { data: posts = [], isLoading } = useProfilePostsFeedQuery(username);
+  const { data: allPosts = [], isLoading } = useProfilePostsFeedQuery(username);
+  const likeMutation = useLikeMutation();
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const [scrolledOnce, setScrolledOnce] = useState(false);
+
+  // Filter posts based on type param
+  const posts = type === "photos"
+    ? allPosts.filter((p) => p.imageUrl || (p.imageUrls && p.imageUrls.length > 0))
+    : allPosts;
+
+  // Single post thread view
+  const singlePost = postId ? allPosts.find((p) => p.id === postId) : null;
 
   // Scroll to tapped post
   useEffect(() => {
@@ -37,6 +52,47 @@ export default function UserPostsScreen() {
     );
   }
 
+  // ── Single post thread view ──
+  if (postId) {
+    if (!singlePost) {
+      return (
+        <View className="flex-1 bg-bg justify-center items-center" style={{ paddingTop: insets.top }}>
+          <Text className="text-text-muted text-base">Publication introuvable</Text>
+          <Pressable onPress={() => router.back()}>
+            <Text className="text-primary text-[15px] mt-3">Retour</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    return (
+      <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+        <View className="flex-row items-center justify-between px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+          <Pressable onPress={() => router.back()} className="p-1">
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </Pressable>
+          <Text className="text-lg font-bold text-text">Post</Text>
+          <View style={{ width: 32 }} />
+        </View>
+
+        <ScrollView className="flex-1">
+          <FeedPostCard
+            post={singlePost}
+            onLike={() => likeMutation.mutate(singlePost.id)}
+            onOpenComments={() => setCommentPostId(singlePost.id)}
+          />
+        </ScrollView>
+
+        <CommentsSheet
+          postId={commentPostId}
+          visible={commentPostId !== null}
+          onClose={() => setCommentPostId(null)}
+        />
+      </View>
+    );
+  }
+
+  // ── Feed list view ──
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center justify-between px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
@@ -54,7 +110,7 @@ export default function UserPostsScreen() {
         renderItem={({ item }) => (
           <FeedPostCard
             post={item}
-            onLike={() => {}}
+            onLike={() => likeMutation.mutate(item.id)}
             onOpenComments={() => setCommentPostId(item.id)}
           />
         )}
