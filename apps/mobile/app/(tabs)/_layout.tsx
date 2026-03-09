@@ -1,10 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
+import { Avatar } from "@garona/ui";
 import { Tabs } from "expo-router";
+import { View } from "react-native";
+
+import { useAuth } from "../../lib/auth";
 
 type TabIcon = { color: string; focused: boolean };
 
 export default function TabLayout() {
+  const { user } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
@@ -70,13 +76,24 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ color, focused }: TabIcon) => (
-            <Ionicons
-              name={focused ? "person-circle" : "person-circle-outline"}
-              size={28}
-              color={color}
-            />
-          ),
+          tabBarIcon: ({ focused }: TabIcon) =>
+            user?.avatarUrl ? (
+              <View
+                style={{
+                  borderWidth: 2,
+                  borderColor: focused ? colors.accent : "transparent",
+                  borderRadius: 999,
+                }}
+              >
+                <Avatar uri={user.avatarUrl} name={user.name} size={26} />
+              </View>
+            ) : (
+              <Ionicons
+                name={focused ? "person-circle" : "person-circle-outline"}
+                size={28}
+                color={focused ? colors.accent : colors.textMuted}
+              />
+            ),
         }}
       />
     </Tabs>
