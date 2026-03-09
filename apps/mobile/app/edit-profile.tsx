@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  View, Text, TextInput, Pressable, ActivityIndicator, Alert, ScrollView,
+  View, Text, TextInput, Pressable, ActivityIndicator, Alert, ScrollView, Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -48,14 +48,25 @@ export default function EditProfileScreen() {
   };
 
   const uploadAvatar = async (uri: string): Promise<string> => {
-    const filename = uri.split("/").pop() || "avatar.jpg";
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
-
     const formData = new FormData();
-    formData.append("file", { uri, name: filename, type } as any);
 
-    const res = await fetch(`${API_URL}/api/upload/avatar`, {
+    if (Platform.OS === "web") {
+      // On web, uri is a blob URL — fetch it to get the actual Blob
+      const blob = await fetch(uri).then((r) => r.blob());
+      const ext = blob.type === "image/png" ? "png" : "jpg";
+      formData.append("file", blob, `avatar.${ext}`);
+    } else {
+      // On native, use the RN-style object
+      const filename = uri.split("/").pop() || "avatar.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+      formData.append("file", { uri, name: filename, type } as any);
+    }
+
+    const url = `${API_URL}/api/upload/avatar`;
+    console.log("[uploadAvatar] Posting to:", url);
+
+    const res = await fetch(url, {
       method: "POST",
       body: formData,
       credentials: "include",
@@ -63,7 +74,11 @@ export default function EditProfileScreen() {
         ...((__DEV__ && user?.username) ? { "X-Dev-User": user.username } : {}),
       },
     });
-    if (!res.ok) throw new Error("Upload failed");
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("[uploadAvatar] Failed:", res.status, text);
+      throw new Error("Upload failed");
+    }
     const data = await res.json();
     return data.url;
   };
