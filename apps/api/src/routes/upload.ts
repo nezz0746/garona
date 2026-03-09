@@ -36,10 +36,18 @@ app.post("/presign", requirePermission(PERMISSION.POST), async (c) => {
 
 // Direct upload endpoint for dev (accepts multipart)
 app.post("/", requirePermission(PERMISSION.POST), async (c) => {
-  const body = await c.req.parseBody();
+  let body: Record<string, string | File>;
+  try {
+    body = await c.req.parseBody();
+  } catch (e: unknown) {
+    console.error("[upload] Failed to parse multipart body:", e);
+    return c.json({ error: "Invalid multipart body" }, 400);
+  }
+
   const file = body["file"];
 
   if (!file || !(file instanceof File)) {
+    console.error("[upload] No file in body. Keys:", Object.keys(body));
     return c.json({ error: "No file provided" }, 400);
   }
 
@@ -49,24 +57,36 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
 
   const S3_ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:9000";
   const S3_BUCKET = process.env.S3_BUCKET || "garona";
+  const uploadUrl = `${S3_ENDPOINT}/${S3_BUCKET}/${key}`;
+
+  console.log(`[upload] Uploading ${file.name} (${file.type}, ${file.size} bytes) to ${uploadUrl}`);
 
   // Upload to MinIO/S3
-  const arrayBuffer = await file.arrayBuffer();
-  const uploadRes = await fetch(`${S3_ENDPOINT}/${S3_BUCKET}/${key}`, {
-    method: "PUT",
-    body: arrayBuffer,
-    headers: {
-      "Content-Type": file.type,
-    },
-  });
+  let uploadRes;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      body: arrayBuffer,
+      headers: {
+        "Content-Type": file.type,
+      },
+    });
+  } catch (e: unknown) {
+    console.error("[upload] S3 fetch error:", e);
+    return c.json({ error: "Failed to reach storage" }, 502);
+  }
 
   if (!uploadRes.ok) {
-    return c.json({ error: "Upload failed" }, 500);
+    const errBody = await uploadRes.text().catch(() => "");
+    console.error(`[upload] S3 responded ${uploadRes.status}: ${errBody}`);
+    return c.json({ error: "Upload failed", status: uploadRes.status }, 500);
   }
 
   // Return proxied URL through API (works from phone)
   const baseUrl = process.env.PUBLIC_API_URL || new URL(c.req.url).origin;
   const publicUrl = `${baseUrl}/api/upload/images/${key}`;
+  console.log(`[upload] Success: ${publicUrl}`);
   return c.json({ url: publicUrl, key });
 });
 

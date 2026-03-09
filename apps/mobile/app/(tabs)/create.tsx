@@ -118,9 +118,6 @@ export default function CreateScreen() {
         ? await Promise.all(selected.map(uploadImage))
         : [];
       await createPostMutation.mutateAsync({ imageUrls, caption: caption || undefined });
-      setSelected([]);
-      setCaption("");
-      setShowCaption(false);
       Alert.alert("Publié !", mode === "image" ? "Ta publication est maintenant visible" : "Ton message est maintenant visible");
       setSelected([]);
       setCaption("");
