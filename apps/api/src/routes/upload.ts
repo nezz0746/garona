@@ -22,6 +22,12 @@ const s3 = new S3Client({
 
 const app = new Hono();
 
+// Log all requests to upload routes
+app.use("*", async (c, next) => {
+  console.log(`[upload] ${c.req.method} ${c.req.path} (full URL: ${c.req.url})`);
+  return next();
+});
+
 // Direct upload endpoint (accepts multipart)
 app.post("/", requirePermission(PERMISSION.POST), async (c) => {
   let body: Record<string, string | File>;
