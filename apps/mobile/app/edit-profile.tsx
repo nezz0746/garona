@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View, Text, TextInput, Pressable, ActivityIndicator, Alert, ScrollView,
 } from "react-native";
@@ -22,6 +22,16 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState(profile?.bio || "");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [initialized, setInitialized] = useState(!!profile);
+
+  // Sync form state when profile data arrives
+  useEffect(() => {
+    if (profile && !initialized) {
+      setName(profile.name || "");
+      setBio(profile.bio || "");
+      setInitialized(true);
+    }
+  }, [profile, initialized]);
 
   const currentAvatar = avatarUri || profile?.avatarUrl || user?.avatarUrl || null;
 
@@ -48,6 +58,7 @@ export default function EditProfileScreen() {
     const res = await fetch(`${API_URL}/api/upload`, {
       method: "POST",
       body: formData,
+      credentials: "include",
       headers: {
         ...((__DEV__ && user?.username) ? { "X-Dev-User": user.username } : {}),
       },

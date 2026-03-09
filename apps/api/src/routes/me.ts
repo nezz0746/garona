@@ -52,12 +52,14 @@ app.patch("/", async (c) => {
     .where(eq(users.id, userId as string))
     .returning();
 
+  const rang = await getUserRang(userId as string);
+
   return c.json({
     id: updated.id,
     name: updated.name,
     username: updated.username,
     avatarUrl: updated.avatarUrl,
-    bio: updated.bio,
+    rang,
   });
 });
 

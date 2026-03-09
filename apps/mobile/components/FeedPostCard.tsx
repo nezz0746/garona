@@ -228,7 +228,7 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
           </Text>
         )}
         {post.linkPreviews && post.linkPreviews.length > 0 && (
-          <View className="px-3.5">
+          <View>
             {post.linkPreviews.map((lp) => (
               <LinkPreviewCard key={lp.url} preview={lp} />
             ))}

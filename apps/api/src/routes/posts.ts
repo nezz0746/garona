@@ -37,43 +37,47 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
     );
   }
 
-  // Extract URLs from caption and create link previews
+  // Extract URLs from caption and scrape link previews (fire-and-forget)
   if (caption) {
     const urlRegex = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
     const matches = caption.match(urlRegex) || [];
     const urls = Array.from(new Set<string>(matches));
 
-    for (let i = 0; i < urls.length && i < 3; i++) {
-      const linkUrl = urls[i];
-      try {
-        let [preview] = await db.select().from(linkPreviews).where(eq(linkPreviews.url, linkUrl));
-
-        if (!preview) {
-          const meta = await scrapeMetadata(linkUrl);
-          if (meta) {
-            [preview] = await db
-              .insert(linkPreviews)
-              .values({ url: linkUrl, ...meta })
-              .onConflictDoNothing()
-              .returning();
+    if (urls.length > 0) {
+      const postId = post.id;
+      Promise.resolve().then(async () => {
+        for (let i = 0; i < urls.length && i < 3; i++) {
+          const linkUrl = urls[i];
+          try {
+            let [preview] = await db.select().from(linkPreviews).where(eq(linkPreviews.url, linkUrl));
 
             if (!preview) {
-              [preview] = await db.select().from(linkPreviews).where(eq(linkPreviews.url, linkUrl));
+              const meta = await scrapeMetadata(linkUrl);
+              if (meta) {
+                [preview] = await db
+                  .insert(linkPreviews)
+                  .values({ url: linkUrl, ...meta })
+                  .onConflictDoNothing()
+                  .returning();
+
+                if (!preview) {
+                  [preview] = await db.select().from(linkPreviews).where(eq(linkPreviews.url, linkUrl));
+                }
+              }
             }
+
+            if (preview) {
+              await db.insert(postLinkPreviews).values({
+                postId,
+                linkPreviewId: preview.id,
+                position: i,
+              });
+            }
+          } catch {
+            // Skip this URL if scraping fails
           }
         }
-
-        if (preview) {
-          await db.insert(postLinkPreviews).values({
-            postId: post.id,
-            linkPreviewId: preview.id,
-            position: i,
-          });
-        }
-      } catch {
-        // Skip this URL if scraping fails
-        continue;
-      }
+      }).catch(() => {});
     }
   }
 
