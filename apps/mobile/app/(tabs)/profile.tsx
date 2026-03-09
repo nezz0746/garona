@@ -145,6 +145,7 @@ export default function ProfileScreen() {
         </View>
 
         <FlatList
+          key="text"
           data={textPosts}
           keyExtractor={(i) => i.id}
           ListHeaderComponent={headerComponent}
@@ -180,6 +181,7 @@ export default function ProfileScreen() {
       </View>
 
       <FlatList
+        key="photos"
         data={photoPosts}
         keyExtractor={(i) => i.id}
         numColumns={COLS}
