@@ -27,7 +27,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<FeedTab>("discover");
-  const { data: posts = [], isLoading, error, refetch } = useFeedQuery(activeTab);
+  const { data: posts = [], isLoading, isRefetching, error, refetch } = useFeedQuery(activeTab);
   const likeMutation = useLikeMutation();
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
 
@@ -118,7 +118,7 @@ export default function HomeScreen() {
         }
         refreshControl={
           <RefreshControl
-            refreshing={isLoading}
+            refreshing={isRefetching}
             onRefresh={refetch}
             tintColor={colors.accent}
           />
