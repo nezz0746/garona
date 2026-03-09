@@ -43,7 +43,15 @@
           "faceIDPermission": "Garona utilise Face ID pour sécuriser ton compte"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "garona-mobile",
+          "organization": "garona"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

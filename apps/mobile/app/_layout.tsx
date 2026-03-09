@@ -8,17 +8,32 @@ import {
 } from "@expo-google-fonts/manrope";
 import { colors } from "@garona/shared";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { isRunningInExpoGo } from "expo";
+import { Stack, useNavigationContainerRef } from "expo-router";
+import * as Sentry from "@sentry/react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import * as Updates from "expo-updates";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Pressable,
   Text,
   TextInput,
   View,
 } from "react-native";
+
+const navigationIntegration = Sentry.reactNavigationIntegration({
+  enableTimeToInitialDisplay: !isRunningInExpoGo(),
+});
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  profilesSampleRate: __DEV__ ? 1.0 : 0.1,
+  integrations: [navigationIntegration],
+  enableNativeFramesTracking: !isRunningInExpoGo(),
+  enabled: !__DEV__,
+});
 
 SplashScreen.preventAutoHideAsync();
 import { LaunchScreen } from "../components/LaunchScreen";
@@ -64,10 +79,17 @@ function applyGlobalFontDefaults() {
   globalFontApplied = true;
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [appState, setAppState] = useState<AppState>("loading");
   const [user, setUser] = useState<AuthUser>(null);
   const [showSignIn, setShowSignIn] = useState(false);
+  const navigationRef = useNavigationContainerRef();
+
+  React.useEffect(() => {
+    if (navigationRef) {
+      navigationIntegration.registerNavigationContainer(navigationRef);
+    }
+  }, [navigationRef]);
   const [fontsLoaded] = useFonts({
     AntiqueOliveNord: require("../assets/AntiqueOliveNord.woff"),
     Manrope_400Regular,
@@ -265,3 +287,5 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);
