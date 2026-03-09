@@ -206,3 +206,34 @@ export const stories = pgTable(
     index("stories_expires_idx").on(t.expiresAt),
   ],
 );
+
+// ─── Link Previews ───
+export const linkPreviews = pgTable(
+  "link_previews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    url: text("url").notNull(),
+    title: text("title"),
+    description: text("description"),
+    imageUrl: text("image_url"),
+    domain: text("domain"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("link_previews_url_idx").on(t.url)],
+);
+
+// ─── Post Link Previews (join table) ───
+export const postLinkPreviews = pgTable(
+  "post_link_previews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    linkPreviewId: uuid("link_preview_id")
+      .notNull()
+      .references(() => linkPreviews.id, { onDelete: "cascade" }),
+    position: integer("position").default(0).notNull(),
+  },
+  (t) => [index("post_link_previews_post_idx").on(t.postId)],
+);

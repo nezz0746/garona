@@ -1,8 +1,9 @@
 import { Hono } from "hono";
-import { db, posts, postImages, likes, comments, users } from "@garona/db";
+import { db, posts, postImages, likes, comments, users, linkPreviews, postLinkPreviews } from "@garona/db";
 import { eq, and } from "drizzle-orm";
 import { requirePermission } from "../middleware";
 import { PERMISSION } from "@garona/db";
+import { scrapeMetadata } from "../lib/scrape";
 
 const app = new Hono();
 
@@ -34,6 +35,46 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
     await db.insert(postImages).values(
       imageUrls.map((url, i) => ({ postId: post.id, imageUrl: url, position: i }))
     );
+  }
+
+  // Extract URLs from caption and create link previews
+  if (caption) {
+    const urlRegex = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+    const matches = caption.match(urlRegex) || [];
+    const urls = Array.from(new Set<string>(matches));
+
+    for (let i = 0; i < urls.length && i < 3; i++) {
+      const linkUrl = urls[i];
+      try {
+        let [preview] = await db.select().from(linkPreviews).where(eq(linkPreviews.url, linkUrl));
+
+        if (!preview) {
+          const meta = await scrapeMetadata(linkUrl);
+          if (meta) {
+            [preview] = await db
+              .insert(linkPreviews)
+              .values({ url: linkUrl, ...meta })
+              .onConflictDoNothing()
+              .returning();
+
+            if (!preview) {
+              [preview] = await db.select().from(linkPreviews).where(eq(linkPreviews.url, linkUrl));
+            }
+          }
+        }
+
+        if (preview) {
+          await db.insert(postLinkPreviews).values({
+            postId: post.id,
+            linkPreviewId: preview.id,
+            position: i,
+          });
+        }
+      } catch {
+        // Skip this URL if scraping fails
+        continue;
+      }
+    }
   }
 
   return c.json(post, 201);

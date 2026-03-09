@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db, posts, postImages, users, likes, comments, follows } from "@garona/db";
+import { db, posts, postImages, users, likes, comments, follows, linkPreviews, postLinkPreviews } from "@garona/db";
 import { eq, desc, sql, and, inArray } from "drizzle-orm";
 
 const app = new Hono();
@@ -127,6 +127,34 @@ export async function enrichPosts(
     imagesMap[img.postId].push(img.imageUrl);
   }
 
+  // Link previews
+  const allLinkPreviews = await db
+    .select({
+      postId: postLinkPreviews.postId,
+      url: linkPreviews.url,
+      title: linkPreviews.title,
+      description: linkPreviews.description,
+      imageUrl: linkPreviews.imageUrl,
+      domain: linkPreviews.domain,
+      position: postLinkPreviews.position,
+    })
+    .from(postLinkPreviews)
+    .innerJoin(linkPreviews, eq(postLinkPreviews.linkPreviewId, linkPreviews.id))
+    .where(inArray(postLinkPreviews.postId, postIds))
+    .orderBy(postLinkPreviews.position);
+
+  const linkPreviewMap: Record<string, { url: string; title: string | null; description: string | null; imageUrl: string | null; domain: string | null }[]> = {};
+  for (const lp of allLinkPreviews) {
+    if (!linkPreviewMap[lp.postId]) linkPreviewMap[lp.postId] = [];
+    linkPreviewMap[lp.postId].push({
+      url: lp.url,
+      title: lp.title,
+      description: lp.description,
+      imageUrl: lp.imageUrl,
+      domain: lp.domain,
+    });
+  }
+
   const likeMap = Object.fromEntries(likeCounts.map((l) => [l.postId, Number(l.count)]));
   const commentMap = Object.fromEntries(commentCounts.map((c) => [c.postId, Number(c.count)]));
   const myLikeSet = new Set(myLikes.map((l) => l.postId));
@@ -147,6 +175,7 @@ export async function enrichPosts(
     likes: likeMap[p.posts.id] || 0,
     comments: commentMap[p.posts.id] || 0,
     liked: myLikeSet.has(p.posts.id),
+    linkPreviews: linkPreviewMap[p.posts.id] || [],
   }));
 }
 
