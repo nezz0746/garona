@@ -67,8 +67,13 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
 
 // Avatar upload (no rang requirement, just auth)
 app.post("/avatar", async (c) => {
+  console.log("[upload/avatar] POST /avatar hit");
   const userId = c.get("userId");
-  if (!userId) return c.json({ error: "Unauthorized" }, 401);
+  console.log("[upload/avatar] userId:", userId);
+  if (!userId) {
+    console.log("[upload/avatar] No userId — returning 401");
+    return c.json({ error: "Unauthorized" }, 401);
+  }
 
   let body: Record<string, string | File>;
   try {

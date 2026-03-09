@@ -50,11 +50,13 @@ app.use("/api/*", async (c, next) => {
 
   if (!session?.user) {
     // Allow read-only access (rang 0 behavior)
+    console.log(`[auth] No session for ${c.req.method} ${c.req.path} — setting userId=null`);
     c.set("userId", null);
     c.set("rang", 0);
     return next();
   }
 
+  console.log(`[auth] Authenticated: ${session.user.id} for ${c.req.method} ${c.req.path}`);
   c.set("userId", session.user.id);
   return next();
 });
