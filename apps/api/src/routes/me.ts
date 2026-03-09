@@ -24,4 +24,41 @@ app.get("/", async (c) => {
   });
 });
 
+// Update current user profile
+app.patch("/", async (c) => {
+  const userId = c.get("userId");
+  if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+  const body = await c.req.json();
+  const updates: Record<string, string | null | Date> = {};
+
+  if (typeof body.name === "string" && body.name.trim()) {
+    updates.name = body.name.trim();
+  }
+  if (typeof body.bio === "string") {
+    updates.bio = body.bio.trim() || null;
+  }
+  if (typeof body.avatarUrl === "string") {
+    updates.avatarUrl = body.avatarUrl;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return c.json({ error: "No fields to update" }, 400);
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(users.id, userId as string))
+    .returning();
+
+  return c.json({
+    id: updated.id,
+    name: updated.name,
+    username: updated.username,
+    avatarUrl: updated.avatarUrl,
+    bio: updated.bio,
+  });
+});
+
 export default app;
