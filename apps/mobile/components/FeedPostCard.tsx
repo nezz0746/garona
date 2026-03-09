@@ -1,8 +1,9 @@
 import { colors } from "@garona/shared";
 import { Avatar, IconButton } from "@garona/ui";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  Animated,
   Dimensions,
   FlatList,
   Image,
@@ -12,6 +13,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { FeedPost } from "../lib/api";
 import { LinkPreviewCard } from "./LinkPreviewCard";
 import { RichText } from "./RichText";
@@ -38,6 +40,27 @@ function timeAgo(dateStr: string): string {
 
 export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showHeart, setShowHeart] = useState(false);
+  const heartScale = useRef(new Animated.Value(0)).current;
+  const heartOpacity = useRef(new Animated.Value(0)).current;
+  const lastTap = useRef(0);
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      // Double tap detected
+      if (!post.liked) onLike();
+      // Animate heart
+      setShowHeart(true);
+      heartScale.setValue(0);
+      heartOpacity.setValue(1);
+      Animated.sequence([
+        Animated.spring(heartScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 12 }),
+        Animated.timing(heartOpacity, { toValue: 0, duration: 400, delay: 200, useNativeDriver: true }),
+      ]).start(() => setShowHeart(false));
+    }
+    lastTap.current = now;
+  };
 
   const images =
     post.imageUrls && post.imageUrls.length > 0
@@ -108,9 +131,6 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
                 </Text>
               </View>
               <View className="flex-row items-center flex-1">
-                <IconButton name="repeat-outline" size={18} />
-              </View>
-              <View className="flex-row items-center flex-1">
                 <IconButton
                   name={post.liked ? "heart" : "heart-outline"}
                   size={18}
@@ -153,47 +173,65 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
         <IconButton name="ellipsis-horizontal" size={20} />
       </View>
 
-      {isCarousel ? (
-        <View>
-          <FlatList
-            data={images}
-            keyExtractor={(_, i) => `img-${i}`}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-            renderItem={({ item }) => (
-              <Image
-                source={{ uri: item }}
-                style={{ width: MAX_WIDTH, height: MAX_WIDTH }}
-                resizeMode="cover"
-              />
-            )}
+      <Pressable onPress={handleDoubleTap}>
+        {isCarousel ? (
+          <View>
+            <FlatList
+              data={images}
+              keyExtractor={(_, i) => `img-${i}`}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={onScroll}
+              scrollEventThrottle={16}
+              renderItem={({ item }) => (
+                <Image
+                  source={{ uri: item }}
+                  style={{ width: MAX_WIDTH, height: MAX_WIDTH }}
+                  resizeMode="cover"
+                />
+              )}
+            />
+            {/* Dots */}
+            <View className="flex-row justify-center gap-1.5 absolute bottom-3 left-0 right-0">
+              {images.map((imageUrl, i) => (
+                <View
+                  key={imageUrl}
+                  className={`w-1.5 h-1.5 rounded-full bg-white/50 ${i === activeIndex ? "bg-white" : ""}`}
+                />
+              ))}
+            </View>
+            {/* Counter */}
+            <View className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 rounded-xl">
+              <Text className="text-white text-xs font-semibold">
+                {activeIndex + 1}/{images.length}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <Image
+            source={{ uri: images[0] }}
+            style={{ width: MAX_WIDTH, height: MAX_WIDTH, alignSelf: "center" }}
+            resizeMode="cover"
           />
-          {/* Dots */}
-          <View className="flex-row justify-center gap-1.5 absolute bottom-3 left-0 right-0">
-            {images.map((imageUrl, i) => (
-              <View
-                key={imageUrl}
-                className={`w-1.5 h-1.5 rounded-full bg-white/50 ${i === activeIndex ? "bg-white" : ""}`}
-              />
-            ))}
-          </View>
-          {/* Counter */}
-          <View className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 rounded-xl">
-            <Text className="text-white text-xs font-semibold">
-              {activeIndex + 1}/{images.length}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <Image
-          source={{ uri: images[0] }}
-          style={{ width: MAX_WIDTH, height: MAX_WIDTH, alignSelf: "center" }}
-          resizeMode="cover"
-        />
-      )}
+        )}
+        {/* Double-tap heart overlay */}
+        {showHeart && (
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0, bottom: 0,
+              justifyContent: "center",
+              alignItems: "center",
+              opacity: heartOpacity,
+              transform: [{ scale: heartScale }],
+            }}
+            pointerEvents="none"
+          >
+            <Ionicons name="heart" size={80} color="#fff" />
+          </Animated.View>
+        )}
+      </Pressable>
 
       <View className="flex-row justify-between items-center px-3 py-2">
         <View className="flex-row gap-1">
@@ -204,7 +242,6 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
             onPress={onLike}
           />
           <IconButton name="chatbubble-outline" onPress={onOpenComments} />
-          <IconButton name="paper-plane-outline" />
         </View>
         {isCarousel && (
           <View className="flex-row gap-1 absolute left-0 right-0 justify-center">
