@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import type { FeedPost } from "../lib/api";
+import { LinkPreviewCard } from "./LinkPreviewCard";
 
 const MAX_WIDTH = Math.min(Dimensions.get("window").width, 600);
 
@@ -86,6 +87,15 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
             <Text className="text-text text-[15px] leading-[22px] mt-1">
               {post.caption}
             </Text>
+
+            {/* Link previews */}
+            {post.linkPreviews && post.linkPreviews.length > 0 && (
+              <View>
+                {post.linkPreviews.map((lp) => (
+                  <LinkPreviewCard key={lp.url} preview={lp} />
+                ))}
+              </View>
+            )}
 
             {/* Engagement row */}
             <View className="flex-row items-center mt-2.5 -ml-2">
@@ -216,6 +226,13 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
             </Text>{" "}
             {post.caption}
           </Text>
+        )}
+        {post.linkPreviews && post.linkPreviews.length > 0 && (
+          <View className="px-3.5">
+            {post.linkPreviews.map((lp) => (
+              <LinkPreviewCard key={lp.url} preview={lp} />
+            ))}
+          </View>
         )}
         {post.comments > 0 && (
           <Pressable onPress={onOpenComments}>

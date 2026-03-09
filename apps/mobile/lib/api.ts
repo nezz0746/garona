@@ -31,6 +31,14 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
 }
 
 // ─── Feed ───
+export type LinkPreview = {
+  url: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  domain: string | null;
+};
+
 export type FeedPost = {
   id: string;
   caption: string | null;
@@ -42,6 +50,7 @@ export type FeedPost = {
   likes: number;
   comments: number;
   liked: boolean;
+  linkPreviews?: LinkPreview[];
 };
 
 export const feedApi = {
