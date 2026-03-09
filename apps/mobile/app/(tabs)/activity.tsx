@@ -59,7 +59,7 @@ function NotifRow({ item }: { item: ActivityItem }) {
 
 export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
-  const { data: items = [], isLoading, refetch } = useActivityQuery();
+  const { data: items = [], isLoading, isRefetching, refetch } = useActivityQuery();
 
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
@@ -72,7 +72,7 @@ export default function ActivityScreen() {
         keyExtractor={(n) => n.id}
         renderItem={({ item }) => <NotifRow item={item} />}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
         ListEmptyComponent={() =>
           !isLoading ? (
