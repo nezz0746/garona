@@ -25,10 +25,17 @@ app.get("/me", async (c) => {
     .from(vouches)
     .where(and(eq(vouches.voucherId, userId), eq(vouches.revoked, false)));
 
+  // Total vouch weight (for progress calculation)
+  const weightResult = await db
+    .select({ total: sql<number>`coalesce(sum(${vouches.weight}), 0)` })
+    .from(vouches)
+    .where(and(eq(vouches.voucheeId, userId), eq(vouches.revoked, false)));
+
   return c.json({
     rang,
     vouchesReceived: Number(received[0]?.count ?? 0),
     vouchesGiven: Number(given[0]?.count ?? 0),
+    totalWeight: Number(weightResult[0]?.total ?? 0),
   });
 });
 

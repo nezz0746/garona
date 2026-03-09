@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  View, Text, Pressable, TextInput, Image, ActivityIndicator,
+  View, Text, Pressable, Image, ActivityIndicator,
   Alert, FlatList, Dimensions, ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,7 @@ import { colors } from "@garona/shared";
 import { API_URL, useAuth } from "../../lib/auth";
 import { useCreatePostMutation } from "../../hooks/mutations/useCreatePostMutation";
 import { useToast } from "../../components/Toast";
+import { MentionTextInput } from "../../components/MentionTextInput";
 
 const SCREEN_W = Dimensions.get("window").width;
 const GALLERY_COLS = 4;
@@ -236,7 +237,7 @@ export default function CreateScreen() {
         </View>
 
         <ScrollView className="flex-1" contentContainerClassName="p-4">
-          <TextInput
+          <MentionTextInput
             className="text-text text-[16px] leading-[24px] min-h-[200px]"
             style={{ textAlignVertical: "top" }}
             placeholder="Quoi de neuf ?"
@@ -311,7 +312,7 @@ export default function CreateScreen() {
             {selected.length > 0 && (
               <Image source={{ uri: selected[0] }} className="w-16 h-16 rounded-lg" />
             )}
-            <TextInput
+            <MentionTextInput
               className="flex-1 text-text text-[15px] leading-[22px] min-h-[80px]"
               style={{ textAlignVertical: "top" }}
               placeholder="Écris une légende..."

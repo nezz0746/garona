@@ -73,7 +73,7 @@ export function useNotifications() {
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
 
-      if (data?.type === "like" || data?.type === "comment") {
+      if (data?.type === "like" || data?.type === "comment" || data?.type === "mention") {
         if (data.postId) {
           router.push(`/posts/${data.username}?postId=${data.postId}`);
         }

@@ -3,13 +3,18 @@ import { View, Text, FlatList, Image, Dimensions, Pressable, ActivityIndicator }
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { colors } from "@garona/shared";
 import { Avatar, IconButton } from "@garona/ui";
-import { RangBadge } from "../../components/RangBadge";
+import { RangProgress } from "../../components/RangProgress";
 import { ProfileShareSheet } from "../../components/ProfileShareSheet";
+import { UsersListSheet } from "../../components/UsersListSheet";
 import { useAuth } from "../../lib/auth";
 import { useProfileQuery } from "../../hooks/queries/useProfileQuery";
 import { useProfilePostsQuery } from "../../hooks/queries/useProfilePostsQuery";
+import { useVouchesMeQuery } from "../../hooks/queries/useVouchesMeQuery";
+import { queryKeys } from "../../lib/queryKeys";
+import { profilesApi } from "../../lib/api";
 import type { UserPost } from "../../lib/api";
 
 const GAP = 2;
@@ -58,8 +63,23 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfileQuery(user?.username || "");
   const { data: userPosts = [] } = useProfilePostsQuery(user?.username || "");
+  const { data: vouchInfo } = useVouchesMeQuery();
   const [shareVisible, setShareVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<PostTab>("photos");
+  const [followersVisible, setFollowersVisible] = useState(false);
+  const [followingVisible, setFollowingVisible] = useState(false);
+
+  const { data: followers = [], isLoading: followersLoading } = useQuery({
+    queryKey: queryKeys.followers(user?.username || ""),
+    queryFn: () => profilesApi.followers(user?.username || ""),
+    enabled: followersVisible && !!user?.username,
+  });
+
+  const { data: following = [], isLoading: followingLoading } = useQuery({
+    queryKey: queryKeys.following(user?.username || ""),
+    queryFn: () => profilesApi.following(user?.username || ""),
+    enabled: followingVisible && !!user?.username,
+  });
 
   const photoPosts = userPosts.filter((p) => p.imageUrl);
   const textPosts = userPosts.filter((p) => !p.imageUrl);
@@ -79,18 +99,24 @@ export default function ProfileScreen() {
         <Avatar uri={profile?.avatarUrl || user?.avatarUrl} name={profile?.name || user?.name} size={80} />
         <View className="flex-1 flex-row justify-around">
           <Stat label="Posts" value={profile?.posts ?? 0} />
-          <Stat label="Abonnés" value={profile?.followers ?? 0} />
-          <Stat label="Abonnements" value={profile?.following ?? 0} />
+          <Pressable onPress={() => setFollowersVisible(true)}>
+            <Stat label="Abonnés" value={profile?.followers ?? 0} />
+          </Pressable>
+          <Pressable onPress={() => setFollowingVisible(true)}>
+            <Stat label="Abonnements" value={profile?.following ?? 0} />
+          </Pressable>
         </View>
       </View>
 
       <View className="px-4 pt-3">
-        <View className="flex-row items-center gap-2">
-          <Text className="text-text font-semibold text-[15px]">{profile?.name || user?.name}</Text>
-          <RangBadge rang={profile?.rang ?? user?.rang ?? 0} size="sm" />
-        </View>
+        <Text className="text-text font-semibold text-[15px]">{profile?.name || user?.name}</Text>
         {profile?.bio && <Text className="text-text text-[13px] mt-1">{profile.bio}</Text>}
       </View>
+
+      <RangProgress
+        rang={profile?.rang ?? user?.rang ?? 0}
+        totalWeight={vouchInfo?.totalWeight ?? 0}
+      />
 
       {/* Buttons */}
       <View className="flex-row px-4 pt-4 gap-1.5">
@@ -170,6 +196,20 @@ export default function ProfileScreen() {
           name={profile?.name || user?.name || ""}
           avatarUrl={profile?.avatarUrl || user?.avatarUrl || null}
         />
+        <UsersListSheet
+          visible={followersVisible}
+          onClose={() => setFollowersVisible(false)}
+          title="Abonnés"
+          users={followers}
+          isLoading={followersLoading}
+        />
+        <UsersListSheet
+          visible={followingVisible}
+          onClose={() => setFollowingVisible(false)}
+          title="Abonnements"
+          users={following}
+          isLoading={followingLoading}
+        />
       </View>
     );
   }
@@ -210,6 +250,20 @@ export default function ProfileScreen() {
         username={user?.username || ""}
         name={profile?.name || user?.name || ""}
         avatarUrl={profile?.avatarUrl || user?.avatarUrl || null}
+      />
+      <UsersListSheet
+        visible={followersVisible}
+        onClose={() => setFollowersVisible(false)}
+        title="Abonnés"
+        users={followers}
+        isLoading={followersLoading}
+      />
+      <UsersListSheet
+        visible={followingVisible}
+        onClose={() => setFollowingVisible(false)}
+        title="Abonnements"
+        users={following}
+        isLoading={followingLoading}
       />
     </View>
   );

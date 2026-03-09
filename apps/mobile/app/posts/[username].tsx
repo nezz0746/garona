@@ -8,6 +8,10 @@ import { FeedPostCard } from "../../components/FeedPostCard";
 import { CommentsSheet } from "../../components/CommentsSheet";
 import { useProfilePostsFeedQuery } from "../../hooks/queries/useProfilePostsFeedQuery";
 import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../../lib/queryKeys";
+import { postsApi } from "../../lib/api";
+import { UsersListSheet } from "../../components/UsersListSheet";
 
 export default function UserPostsScreen() {
   const { username, startIndex, postId, type } = useLocalSearchParams<{
@@ -20,6 +24,14 @@ export default function UserPostsScreen() {
   const { data: allPosts = [], isLoading } = useProfilePostsFeedQuery(username);
   const likeMutation = useLikeMutation();
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [likesPostId, setLikesPostId] = useState<string | null>(null);
+
+  const { data: likedUsers = [], isLoading: likesLoading } = useQuery({
+    queryKey: queryKeys.postLikes(likesPostId!),
+    queryFn: () => postsApi.likes(likesPostId!),
+    enabled: !!likesPostId,
+  });
+
   const flatListRef = useRef<FlatList>(null);
   const [scrolledOnce, setScrolledOnce] = useState(false);
 
@@ -80,6 +92,7 @@ export default function UserPostsScreen() {
             post={singlePost}
             onLike={() => likeMutation.mutate(singlePost.id)}
             onOpenComments={() => setCommentPostId(singlePost.id)}
+            onOpenLikes={() => setLikesPostId(singlePost.id)}
           />
         </ScrollView>
 
@@ -87,6 +100,13 @@ export default function UserPostsScreen() {
           postId={commentPostId}
           visible={commentPostId !== null}
           onClose={() => setCommentPostId(null)}
+        />
+        <UsersListSheet
+          visible={!!likesPostId}
+          onClose={() => setLikesPostId(null)}
+          title="J'aime"
+          users={likedUsers}
+          isLoading={likesLoading}
         />
       </View>
     );
@@ -112,6 +132,7 @@ export default function UserPostsScreen() {
             post={item}
             onLike={() => likeMutation.mutate(item.id)}
             onOpenComments={() => setCommentPostId(item.id)}
+            onOpenLikes={() => setLikesPostId(item.id)}
           />
         )}
         onScrollToIndexFailed={(info) => {
@@ -126,6 +147,13 @@ export default function UserPostsScreen() {
         postId={commentPostId}
         visible={commentPostId !== null}
         onClose={() => setCommentPostId(null)}
+      />
+      <UsersListSheet
+        visible={!!likesPostId}
+        onClose={() => setLikesPostId(null)}
+        title="J'aime"
+        users={likedUsers}
+        isLoading={likesLoading}
       />
     </View>
   );

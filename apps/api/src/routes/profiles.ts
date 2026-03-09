@@ -160,6 +160,52 @@ app.get("/:username/posts", async (c) => {
   return c.json(userPosts);
 });
 
+// Get followers of a user
+app.get("/:username/followers", async (c) => {
+  const username = c.req.param("username");
+
+  const [user] = await db.select().from(users).where(eq(users.username, username));
+  if (!user) return c.json({ error: "Not found" }, 404);
+
+  const result = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(follows)
+    .innerJoin(users, eq(follows.followerId, users.id))
+    .where(eq(follows.followingId, user.id))
+    .orderBy(sql`${follows.createdAt} desc`)
+    .limit(100);
+
+  return c.json(result);
+});
+
+// Get following of a user
+app.get("/:username/following", async (c) => {
+  const username = c.req.param("username");
+
+  const [user] = await db.select().from(users).where(eq(users.username, username));
+  if (!user) return c.json({ error: "Not found" }, 404);
+
+  const result = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(follows)
+    .innerJoin(users, eq(follows.followingId, users.id))
+    .where(eq(follows.followerId, user.id))
+    .orderBy(sql`${follows.createdAt} desc`)
+    .limit(100);
+
+  return c.json(result);
+});
+
 // Search users
 app.get("/", async (c) => {
   const q = c.req.query("q")?.trim();

@@ -127,32 +127,36 @@ export async function enrichPosts(
     imagesMap[img.postId].push(img.imageUrl);
   }
 
-  // Link previews
-  const allLinkPreviews = await db
-    .select({
-      postId: postLinkPreviews.postId,
-      url: linkPreviews.url,
-      title: linkPreviews.title,
-      description: linkPreviews.description,
-      imageUrl: linkPreviews.imageUrl,
-      domain: linkPreviews.domain,
-      position: postLinkPreviews.position,
-    })
-    .from(postLinkPreviews)
-    .innerJoin(linkPreviews, eq(postLinkPreviews.linkPreviewId, linkPreviews.id))
-    .where(inArray(postLinkPreviews.postId, postIds))
-    .orderBy(postLinkPreviews.position);
-
+  // Link previews (table may not exist yet if migration hasn't run)
   const linkPreviewMap: Record<string, { url: string; title: string | null; description: string | null; imageUrl: string | null; domain: string | null }[]> = {};
-  for (const lp of allLinkPreviews) {
-    if (!linkPreviewMap[lp.postId]) linkPreviewMap[lp.postId] = [];
-    linkPreviewMap[lp.postId].push({
-      url: lp.url,
-      title: lp.title,
-      description: lp.description,
-      imageUrl: lp.imageUrl,
-      domain: lp.domain,
-    });
+  try {
+    const allLinkPreviews = await db
+      .select({
+        postId: postLinkPreviews.postId,
+        url: linkPreviews.url,
+        title: linkPreviews.title,
+        description: linkPreviews.description,
+        imageUrl: linkPreviews.imageUrl,
+        domain: linkPreviews.domain,
+        position: postLinkPreviews.position,
+      })
+      .from(postLinkPreviews)
+      .innerJoin(linkPreviews, eq(postLinkPreviews.linkPreviewId, linkPreviews.id))
+      .where(inArray(postLinkPreviews.postId, postIds))
+      .orderBy(postLinkPreviews.position);
+
+    for (const lp of allLinkPreviews) {
+      if (!linkPreviewMap[lp.postId]) linkPreviewMap[lp.postId] = [];
+      linkPreviewMap[lp.postId].push({
+        url: lp.url,
+        title: lp.title,
+        description: lp.description,
+        imageUrl: lp.imageUrl,
+        domain: lp.domain,
+      });
+    }
+  } catch {
+    // post_link_previews table may not exist yet
   }
 
   const likeMap = Object.fromEntries(likeCounts.map((l) => [l.postId, Number(l.count)]));

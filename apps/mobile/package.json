@@ -9,7 +9,7 @@
     "build": "expo export -p web",
     "start": "expo serve",
     "publish": "source .env.production && eas update --environment production --branch production --auto",
-    "lint": "echo ok"
+"lint": "echo ok"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
@@ -19,7 +19,7 @@
     "@garona/shared": "workspace:*",
     "@garona/ui": "workspace:*",
     "@sentry/react-native": "~7.11.0",
-    "@tanstack/react-query": "^5.90.21",
+"@tanstack/react-query": "^5.90.21",
     "expo": "~55.0.5",
     "expo-camera": "~55.0.9",
     "expo-clipboard": "~55.0.8",
@@ -42,7 +42,7 @@
     "react-native-gesture-handler": "~2.30.0",
     "react-native-passkey": "^3.3.2",
     "react-native-qrcode-svg": "^6.3.21",
-    "react-native-safe-area-context": "5.6.2",
+"react-native-safe-area-context": "5.6.2",
     "react-native-screens": "~4.23.0",
     "react-native-svg": "15.15.3",
     "react-native-web": "~0.21.2"

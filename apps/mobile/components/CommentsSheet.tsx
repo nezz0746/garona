@@ -8,6 +8,8 @@ import { colors } from "@garona/shared";
 import { Avatar } from "@garona/ui";
 import { useCommentsQuery } from "../hooks/queries/useCommentsQuery";
 import { useCommentMutation } from "../hooks/mutations/useCommentMutation";
+import { MentionTextInput } from "./MentionTextInput";
+import { RichText } from "./RichText";
 
 type Props = {
   postId: string | null;
@@ -78,8 +80,10 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
                     <Text className="font-semibold">
                       {(item as any).author?.username || "utilisateur"}
                     </Text>{" "}
-                    {item.text}
                   </Text>
+                  <RichText className="text-text text-sm leading-5">
+                    {item.text}
+                  </RichText>
                   <Text className="text-text-muted text-[11px]">{timeAgo(item.createdAt)}</Text>
                 </View>
               </View>
@@ -89,8 +93,8 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
 
         {/* Input */}
         <View className="flex-row items-center px-4 py-2.5 border-t border-border pb-[30px] gap-2.5" style={{ borderTopWidth: 0.5 }}>
-          <TextInput
-            ref={inputRef}
+          <MentionTextInput
+            inputRef={inputRef}
             className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
             placeholder="Ajouter un commentaire..."
             placeholderTextColor={colors.textMuted}

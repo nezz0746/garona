@@ -29,3 +29,5 @@ export const useAuth = () => useContext(AuthContext);
 export const API_URL = __DEV__
   ? "http://localhost:3001"
   : process.env.EXPO_PUBLIC_API_URL;
+
+console.log({ API_URL });

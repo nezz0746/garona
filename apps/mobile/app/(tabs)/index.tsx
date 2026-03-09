@@ -11,6 +11,10 @@ import { CommentsSheet } from "../../components/CommentsSheet";
 import { FeedPostCard } from "../../components/FeedPostCard";
 import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 import { useFeedQuery } from "../../hooks/queries/useFeedQuery";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../../lib/queryKeys";
+import { postsApi } from "../../lib/api";
+import { UsersListSheet } from "../../components/UsersListSheet";
 
 function getAppVersion() {
   const version = Constants.expoConfig?.version ?? "?";
@@ -30,6 +34,13 @@ export default function HomeScreen() {
   const { data: posts = [], isLoading, isRefetching, error, refetch } = useFeedQuery(activeTab);
   const likeMutation = useLikeMutation();
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [likesPostId, setLikesPostId] = useState<string | null>(null);
+
+  const { data: likedUsers = [], isLoading: likesLoading } = useQuery({
+    queryKey: queryKeys.postLikes(likesPostId!),
+    queryFn: () => postsApi.likes(likesPostId!),
+    enabled: !!likesPostId,
+  });
 
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
@@ -85,6 +96,7 @@ export default function HomeScreen() {
             post={item}
             onLike={() => likeMutation.mutate(item.id)}
             onOpenComments={() => setCommentPostId(item.id)}
+            onOpenLikes={() => setLikesPostId(item.id)}
           />
         )}
         ListEmptyComponent={() =>
@@ -130,6 +142,13 @@ export default function HomeScreen() {
         postId={commentPostId}
         visible={commentPostId !== null}
         onClose={() => setCommentPostId(null)}
+      />
+      <UsersListSheet
+        visible={!!likesPostId}
+        onClose={() => setLikesPostId(null)}
+        title="J'aime"
+        users={likedUsers}
+        isLoading={likesLoading}
       />
     </View>
   );

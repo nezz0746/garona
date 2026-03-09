@@ -1,12 +1,42 @@
 import { Hono } from "hono";
 import { db, posts, postImages, likes, comments, users, linkPreviews, postLinkPreviews } from "@garona/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { requirePermission } from "../middleware";
 import { PERMISSION } from "@garona/db";
 import { scrapeMetadata } from "../lib/scrape";
-import { notifyUser } from "../lib/push";
+import { notifyUser, notifyUsers } from "../lib/push";
 
 const app = new Hono();
+
+/** Parse @username mentions from text, notify matched users */
+async function notifyMentions(
+  text: string,
+  authorId: string,
+  authorName: string,
+  postId: string,
+  context: "publication" | "commentaire",
+) {
+  const mentionRegex = /@([a-zA-Z0-9_]+)/g;
+  const usernames = [...new Set(Array.from(text.matchAll(mentionRegex), (m) => m[1]))];
+  if (usernames.length === 0) return;
+
+  const mentionedUsers = await db
+    .select({ id: users.id, username: users.username })
+    .from(users)
+    .where(inArray(users.username, usernames));
+
+  const userIds = mentionedUsers
+    .filter((u) => u.id !== authorId)
+    .map((u) => u.id);
+
+  if (userIds.length === 0) return;
+
+  notifyUsers(userIds, {
+    title: "Mention",
+    body: `${authorName} t'a mentionné dans une ${context}`,
+    data: { type: "mention", postId },
+  }).catch(() => {});
+}
 
 // Create post (requires POST permission)
 // Accepts { imageUrl, caption } or { imageUrls: string[], caption }
@@ -82,6 +112,13 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
     }
   }
 
+  // Notify mentioned users (fire-and-forget)
+  if (caption) {
+    db.select({ name: users.name }).from(users).where(eq(users.id, userId)).then(([author]) => {
+      if (author) notifyMentions(caption, userId, author.name, post.id, "publication");
+    });
+  }
+
   return c.json(post, 201);
 });
 
@@ -150,6 +187,11 @@ app.post("/:postId/comment", requirePermission(PERMISSION.COMMENT), async (c) =>
     }
   });
 
+  // Notify mentioned users in comment (fire-and-forget)
+  db.select({ name: users.name }).from(users).where(eq(users.id, userId)).then(([author]) => {
+    if (author) notifyMentions(text.trim(), userId, author.name, postId, "commentaire");
+  });
+
   return c.json(comment, 201);
 });
 
@@ -183,6 +225,26 @@ app.get("/:postId/comments", async (c) => {
       author: { username: r.authorUsername, name: r.authorName, avatarUrl: r.authorAvatar },
     }))
   );
+});
+
+// Get users who liked a post
+app.get("/:postId/likes", async (c) => {
+  const postId = c.req.param("postId");
+
+  const result = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(likes)
+    .innerJoin(users, eq(likes.userId, users.id))
+    .where(eq(likes.postId, postId))
+    .orderBy(sql`${likes.createdAt} desc`)
+    .limit(100);
+
+  return c.json(result);
 });
 
 // Delete post (author only)

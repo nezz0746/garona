@@ -72,6 +72,8 @@ export const postsApi = {
     apiFetch<{ id: string; authorId: string; text: string; createdAt: string }[]>(`/api/posts/${postId}/comments`),
   delete: (postId: string) =>
     apiFetch<{ deleted: boolean }>(`/api/posts/${postId}`, { method: "DELETE" }),
+  likes: (postId: string) =>
+    apiFetch<{ id: string; username: string; name: string; avatarUrl: string | null }[]>(`/api/posts/${postId}/likes`),
 };
 
 // ─── Profiles ───
@@ -110,6 +112,10 @@ export const profilesApi = {
       "/api/profiles",
       { params: { q } }
     ),
+  followers: (username: string) =>
+    apiFetch<{ id: string; username: string; name: string; avatarUrl: string | null }[]>(`/api/profiles/${username}/followers`),
+  following: (username: string) =>
+    apiFetch<{ id: string; username: string; name: string; avatarUrl: string | null }[]>(`/api/profiles/${username}/following`),
 };
 
 // ─── Activity ───
@@ -183,6 +189,7 @@ export type VouchInfo = {
   rang: number;
   vouchesReceived: number;
   vouchesGiven: number;
+  totalWeight: number;
 };
 
 export const vouchesApi = {

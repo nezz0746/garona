@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import type { FeedPost } from "../lib/api";
 import { LinkPreviewCard } from "./LinkPreviewCard";
+import { RichText } from "./RichText";
 
 const MAX_WIDTH = Math.min(Dimensions.get("window").width, 600);
 
@@ -21,6 +22,7 @@ type Props = {
   post: FeedPost;
   onLike: () => void;
   onOpenComments: () => void;
+  onOpenLikes: () => void;
 };
 
 function timeAgo(dateStr: string): string {
@@ -34,7 +36,7 @@ function timeAgo(dateStr: string): string {
   return `${days}j`;
 }
 
-export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
+export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const images =
@@ -84,9 +86,9 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
             </View>
 
             {/* Body */}
-            <Text className="text-text text-[15px] leading-[22px] mt-1">
-              {post.caption}
-            </Text>
+            <RichText className="text-text text-[15px] leading-[22px] mt-1">
+              {post.caption || ""}
+            </RichText>
 
             {/* Link previews */}
             {post.linkPreviews && post.linkPreviews.length > 0 && (
@@ -115,9 +117,11 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
                   color={post.liked ? colors.like : colors.textMuted}
                   onPress={onLike}
                 />
-                <Text className="text-text-muted text-[13px] ml-0.5">
-                  {post.likes || ""}
-                </Text>
+                <Pressable onPress={onOpenLikes}>
+                  <Text className="text-text-muted text-[13px] ml-0.5">
+                    {post.likes || ""}
+                  </Text>
+                </Pressable>
               </View>
               <View className="flex-row items-center">
                 <IconButton name="share-outline" size={18} />
@@ -216,16 +220,22 @@ export function FeedPostCard({ post, onLike, onOpenComments }: Props) {
       </View>
 
       <View className="px-3.5 gap-1 pb-2">
-        <Text className="text-text font-semibold text-[13px]">
-          {post.likes.toLocaleString()} j'aime
-        </Text>
-        {post.caption && (
-          <Text className="text-text text-[13px] leading-[18px]">
-            <Text className="text-text font-semibold text-[13px]">
-              {post.author.username}
-            </Text>{" "}
-            {post.caption}
+        <Pressable onPress={onOpenLikes}>
+          <Text className="text-text font-semibold text-[13px]">
+            {post.likes.toLocaleString()} j'aime
           </Text>
+        </Pressable>
+        {post.caption && (
+          <View>
+            <Text className="text-text text-[13px] leading-[18px]">
+              <Text className="text-text font-semibold text-[13px]">
+                {post.author.username}
+              </Text>{" "}
+            </Text>
+            <RichText className="text-text text-[13px] leading-[18px]">
+              {post.caption}
+            </RichText>
+          </View>
         )}
         {post.linkPreviews && post.linkPreviews.length > 0 && (
           <View>

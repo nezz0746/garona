@@ -5,11 +5,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@garona/shared";
 import { Avatar } from "@garona/ui";
+import { useQuery } from "@tanstack/react-query";
 import { useProfileQuery } from "../../hooks/queries/useProfileQuery";
 import { useProfilePostsQuery } from "../../hooks/queries/useProfilePostsQuery";
 import { useFollowMutation } from "../../hooks/mutations/useFollowMutation";
 import { RangBadge } from "../../components/RangBadge";
 import { VouchButton } from "../../components/VouchButton";
+import { UsersListSheet } from "../../components/UsersListSheet";
+import { queryKeys } from "../../lib/queryKeys";
+import { profilesApi } from "../../lib/api";
 import type { UserPost } from "../../lib/api";
 
 const GAP = 2;
@@ -60,6 +64,20 @@ export default function UserProfileScreen() {
   const { data: userPosts = [] } = useProfilePostsQuery(username);
   const followMutation = useFollowMutation(username);
   const [activeTab, setActiveTab] = useState<PostTab>("photos");
+  const [followersVisible, setFollowersVisible] = useState(false);
+  const [followingVisible, setFollowingVisible] = useState(false);
+
+  const { data: followers = [], isLoading: followersLoading } = useQuery({
+    queryKey: queryKeys.followers(username),
+    queryFn: () => profilesApi.followers(username),
+    enabled: followersVisible && !!username,
+  });
+
+  const { data: followingUsers = [], isLoading: followingLoading } = useQuery({
+    queryKey: queryKeys.following(username),
+    queryFn: () => profilesApi.following(username),
+    enabled: followingVisible && !!username,
+  });
 
   const photoPosts = userPosts.filter((p) => p.imageUrl);
   const textPosts = userPosts.filter((p) => !p.imageUrl);
@@ -90,8 +108,12 @@ export default function UserProfileScreen() {
         <Avatar uri={profile.avatarUrl} name={profile.name} size={80} />
         <View className="flex-1 flex-row justify-around">
           <Stat label="Posts" value={profile.posts} />
-          <Stat label="Abonnés" value={profile.followers} />
-          <Stat label="Abonnements" value={profile.following} />
+          <Pressable onPress={() => setFollowersVisible(true)}>
+            <Stat label="Abonnés" value={profile.followers} />
+          </Pressable>
+          <Pressable onPress={() => setFollowingVisible(true)}>
+            <Stat label="Abonnements" value={profile.following} />
+          </Pressable>
         </View>
       </View>
 
@@ -176,6 +198,20 @@ export default function UserProfileScreen() {
             <TextPostRow item={item} username={username} />
           )}
         />
+        <UsersListSheet
+          visible={followersVisible}
+          onClose={() => setFollowersVisible(false)}
+          title="Abonnés"
+          users={followers}
+          isLoading={followersLoading}
+        />
+        <UsersListSheet
+          visible={followingVisible}
+          onClose={() => setFollowingVisible(false)}
+          title="Abonnements"
+          users={followingUsers}
+          isLoading={followingLoading}
+        />
       </View>
     );
   }
@@ -210,6 +246,20 @@ export default function UserProfileScreen() {
             <Image source={{ uri: item.imageUrl!}} style={{ width: TILE, height: TILE }} />
           </Pressable>
         )}
+      />
+      <UsersListSheet
+        visible={followersVisible}
+        onClose={() => setFollowersVisible(false)}
+        title="Abonnés"
+        users={followers}
+        isLoading={followersLoading}
+      />
+      <UsersListSheet
+        visible={followingVisible}
+        onClose={() => setFollowingVisible(false)}
+        title="Abonnements"
+        users={followingUsers}
+        isLoading={followingLoading}
       />
     </View>
   );

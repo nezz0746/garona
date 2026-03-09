@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as LocalAuthentication from "expo-local-authentication";
 import { colors } from "@garona/shared";
 import { signupApi, SignupResult } from "../lib/api";
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function SignupForm({ onSignedUp, onBack }: Props) {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
@@ -129,7 +131,7 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
       className="flex-1 bg-bg"
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Pressable onPress={onBack} className="p-4">
+      <Pressable onPress={onBack} className="p-4" style={{ paddingTop: insets.top + 16 }}>
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </Pressable>
 
