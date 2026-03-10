@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { requirePermission } from "../middleware";
 import { PERMISSION } from "@garona/db";
 import crypto from "crypto";
-import sharp from "sharp";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const MAX_WIDTH = 1200;
@@ -10,9 +9,19 @@ const MAX_HEIGHT = 1200;
 const JPEG_QUALITY = 80;
 const AVATAR_SIZE = 400;
 
-async function processImage(buffer: ArrayBuffer, maxW = MAX_WIDTH, maxH = MAX_HEIGHT, quality = JPEG_QUALITY): Promise<{ data: Buffer; contentType: string }> {
-  const data = await sharp(Buffer.from(buffer))
-    .rotate() // auto-rotate based on EXIF
+let sharpModule: typeof import("sharp") | null = null;
+try {
+  sharpModule = require("sharp");
+} catch {
+  console.warn("[upload] sharp not available — images will be stored without server-side processing");
+}
+
+async function processImage(buffer: ArrayBuffer, maxW = MAX_WIDTH, maxH = MAX_HEIGHT, quality = JPEG_QUALITY): Promise<{ data: Buffer | Uint8Array; contentType: string }> {
+  if (!sharpModule) {
+    return { data: new Uint8Array(buffer), contentType: "image/jpeg" };
+  }
+  const data = await sharpModule.default(Buffer.from(buffer))
+    .rotate()
     .resize(maxW, maxH, { fit: "inside", withoutEnlargement: true })
     .jpeg({ quality, mozjpeg: true })
     .toBuffer();
