@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, FlatList, Image, Dimensions, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,17 +9,16 @@ import { Avatar, IconButton } from "@garona/ui";
 import { RangProgress } from "../../components/RangProgress";
 import { ProfileShareSheet } from "../../components/ProfileShareSheet";
 import { UsersListSheet } from "../../components/UsersListSheet";
+import { CommentsSheet } from "../../components/CommentsSheet";
+import { FeedPostCard } from "../../components/FeedPostCard";
+import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
+import { postsApi } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useProfileQuery } from "../../hooks/queries/useProfileQuery";
 import { useProfilePostsQuery } from "../../hooks/queries/useProfilePostsQuery";
 import { useVouchesMeQuery } from "../../hooks/queries/useVouchesMeQuery";
 import { queryKeys } from "../../lib/queryKeys";
 import { profilesApi } from "../../lib/api";
-import type { UserPost } from "../../lib/api";
-
-const GAP = 2;
-const COLS = 3;
-const TILE = (Math.min(Dimensions.get("window").width, 600) - GAP * (COLS - 1)) / COLS;
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
@@ -36,9 +35,18 @@ export default function ProfileScreen() {
   const { data: profile, isLoading: profileLoading } = useProfileQuery(user?.username || "");
   const { data: userPosts = [] } = useProfilePostsQuery(user?.username || "");
   const { data: vouchInfo } = useVouchesMeQuery();
+  const likeMutation = useLikeMutation();
   const [shareVisible, setShareVisible] = useState(false);
   const [followersVisible, setFollowersVisible] = useState(false);
   const [followingVisible, setFollowingVisible] = useState(false);
+  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [likesPostId, setLikesPostId] = useState<string | null>(null);
+
+  const { data: likedUsers = [], isLoading: likesLoading } = useQuery({
+    queryKey: queryKeys.postLikes(likesPostId!),
+    queryFn: () => postsApi.likes(likesPostId!),
+    enabled: !!likesPostId,
+  });
 
   const { data: followers = [], isLoading: followersLoading } = useQuery({
     queryKey: queryKeys.followers(user?.username || ""),
@@ -115,9 +123,6 @@ export default function ProfileScreen() {
       <FlatList
         data={userPosts}
         keyExtractor={(i) => i.id}
-        numColumns={COLS}
-        columnWrapperStyle={{ gap: GAP }}
-        contentContainerStyle={{ gap: GAP }}
         ListHeaderComponent={headerComponent}
         ListEmptyComponent={() => (
           <View className="py-[60px] items-center gap-3">
@@ -125,19 +130,29 @@ export default function ProfileScreen() {
             <Text className="text-text-muted text-[15px]">Aucune publication</Text>
           </View>
         )}
-        renderItem={({ item, index }) => (
-          <Pressable onPress={() => router.push(`/posts/${user?.username}?startIndex=${index}`)}>
-            {item.imageUrl ? (
-              <Image source={{ uri: item.imageUrl }} style={{ width: TILE, height: TILE }} />
-            ) : (
-              <View style={{ width: TILE, height: TILE, backgroundColor: colors.surface, padding: 8, justifyContent: "center" }}>
-                <Text className="text-text text-[11px] leading-[14px]" numberOfLines={5}>
-                  {item.caption}
-                </Text>
-              </View>
-            )}
-          </Pressable>
+        renderItem={({ item }) => (
+          <FeedPostCard
+            post={item}
+            onLike={() => likeMutation.mutate(item.id)}
+            onOpenComments={() => setCommentPostId(item.id)}
+            onOpenLikes={() => setLikesPostId(item.id)}
+          />
         )}
+      />
+
+      {commentPostId && (
+        <CommentsSheet
+          postId={commentPostId}
+          visible={!!commentPostId}
+          onClose={() => setCommentPostId(null)}
+        />
+      )}
+      <UsersListSheet
+        visible={!!likesPostId}
+        onClose={() => setLikesPostId(null)}
+        title="J'aime"
+        users={likedUsers}
+        isLoading={likesLoading}
       />
 
       <ProfileShareSheet

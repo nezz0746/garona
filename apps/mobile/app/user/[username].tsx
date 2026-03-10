@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, FlatList, Image, Dimensions } from "react-native";
+import { View, Text, Pressable, ActivityIndicator, FlatList } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,16 +9,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useProfileQuery } from "../../hooks/queries/useProfileQuery";
 import { useProfilePostsQuery } from "../../hooks/queries/useProfilePostsQuery";
 import { useFollowMutation } from "../../hooks/mutations/useFollowMutation";
+import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 import { RangBadge } from "../../components/RangBadge";
 import { VouchButton } from "../../components/VouchButton";
 import { UsersListSheet } from "../../components/UsersListSheet";
+import { CommentsSheet } from "../../components/CommentsSheet";
+import { FeedPostCard } from "../../components/FeedPostCard";
 import { queryKeys } from "../../lib/queryKeys";
-import { profilesApi } from "../../lib/api";
-import type { UserPost } from "../../lib/api";
-
-const GAP = 2;
-const COLS = 3;
-const TILE = (Math.min(Dimensions.get("window").width, 600) - GAP * (COLS - 1)) / COLS;
+import { profilesApi, postsApi } from "../../lib/api";
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
@@ -35,8 +33,17 @@ export default function UserProfileScreen() {
   const { data: profile, isLoading } = useProfileQuery(username);
   const { data: userPosts = [] } = useProfilePostsQuery(username);
   const followMutation = useFollowMutation(username);
+  const likeMutation = useLikeMutation();
   const [followersVisible, setFollowersVisible] = useState(false);
   const [followingVisible, setFollowingVisible] = useState(false);
+  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [likesPostId, setLikesPostId] = useState<string | null>(null);
+
+  const { data: likedUsers = [], isLoading: likesLoading } = useQuery({
+    queryKey: queryKeys.postLikes(likesPostId!),
+    queryFn: () => postsApi.likes(likesPostId!),
+    enabled: !!likesPostId,
+  });
 
   const { data: followers = [], isLoading: followersLoading } = useQuery({
     queryKey: queryKeys.followers(username),
@@ -126,9 +133,6 @@ export default function UserProfileScreen() {
       <FlatList
         data={userPosts}
         keyExtractor={(i) => i.id}
-        numColumns={COLS}
-        columnWrapperStyle={{ gap: GAP }}
-        contentContainerStyle={{ gap: GAP }}
         ListHeaderComponent={headerComponent}
         ListEmptyComponent={() => (
           <View className="py-[60px] items-center gap-3">
@@ -136,19 +140,28 @@ export default function UserProfileScreen() {
             <Text className="text-text-muted text-[15px]">Aucune publication</Text>
           </View>
         )}
-        renderItem={({ item, index }) => (
-          <Pressable onPress={() => router.push(`/posts/${username}?startIndex=${index}`)}>
-            {item.imageUrl ? (
-              <Image source={{ uri: item.imageUrl }} style={{ width: TILE, height: TILE }} />
-            ) : (
-              <View style={{ width: TILE, height: TILE, backgroundColor: colors.surface, padding: 8, justifyContent: "center" }}>
-                <Text className="text-text text-[11px] leading-[14px]" numberOfLines={5}>
-                  {item.caption}
-                </Text>
-              </View>
-            )}
-          </Pressable>
+        renderItem={({ item }) => (
+          <FeedPostCard
+            post={item}
+            onLike={() => likeMutation.mutate(item.id)}
+            onOpenComments={() => setCommentPostId(item.id)}
+            onOpenLikes={() => setLikesPostId(item.id)}
+          />
         )}
+      />
+      {commentPostId && (
+        <CommentsSheet
+          postId={commentPostId}
+          visible={!!commentPostId}
+          onClose={() => setCommentPostId(null)}
+        />
+      )}
+      <UsersListSheet
+        visible={!!likesPostId}
+        onClose={() => setLikesPostId(null)}
+        title="J'aime"
+        users={likedUsers}
+        isLoading={likesLoading}
       />
       <UsersListSheet
         visible={followersVisible}

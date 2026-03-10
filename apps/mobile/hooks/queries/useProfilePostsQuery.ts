@@ -5,7 +5,7 @@ import { profilesApi } from "../../lib/api";
 export function useProfilePostsQuery(username: string, limit = 30) {
   return useQuery({
     queryKey: queryKeys.profilePosts(username),
-    queryFn: () => profilesApi.posts(username, limit),
+    queryFn: () => profilesApi.postsFeed(username, limit),
     enabled: !!username,
   });
 }
