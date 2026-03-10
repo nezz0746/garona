@@ -21,40 +21,12 @@ const GAP = 2;
 const COLS = 3;
 const TILE = (Math.min(Dimensions.get("window").width, 600) - GAP * (COLS - 1)) / COLS;
 
-type PostTab = "photos" | "text";
-
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <View className="items-center">
       <Text className="text-text font-bold text-base">{value.toLocaleString()}</Text>
       <Text className="text-text-secondary text-xs mt-0.5">{label}</Text>
     </View>
-  );
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "maintenant";
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  return `${days}j`;
-}
-
-function TextPostRow({ item }: { item: UserPost }) {
-  return (
-    <Pressable
-      className="px-4 py-3 border-b border-border"
-      style={{ borderBottomWidth: 0.5 }}
-      onPress={() => router.push(`/post/${item.id}`)}
-    >
-      <Text className="text-text text-[15px] leading-[22px]" numberOfLines={4}>
-        {item.caption}
-      </Text>
-      <Text className="text-text-muted text-[12px] mt-1.5">{timeAgo(item.createdAt)}</Text>
-    </Pressable>
   );
 }
 
@@ -65,7 +37,6 @@ export default function ProfileScreen() {
   const { data: userPosts = [] } = useProfilePostsQuery(user?.username || "");
   const { data: vouchInfo } = useVouchesMeQuery();
   const [shareVisible, setShareVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<PostTab>("photos");
   const [followersVisible, setFollowersVisible] = useState(false);
   const [followingVisible, setFollowingVisible] = useState(false);
 
@@ -80,9 +51,6 @@ export default function ProfileScreen() {
     queryFn: () => profilesApi.following(user?.username || ""),
     enabled: followingVisible && !!user?.username,
   });
-
-  const photoPosts = userPosts.filter((p) => p.imageUrl);
-  const textPosts = userPosts.filter((p) => !p.imageUrl);
 
   if (profileLoading && !profile) {
     return (
@@ -131,88 +99,9 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      {/* Tabs */}
-      <View className="flex-row border-t border-b border-border mt-4" style={{ borderTopWidth: 0.5, borderBottomWidth: 0.5 }}>
-        <Pressable
-          className="flex-1 items-center py-2.5"
-          onPress={() => setActiveTab("photos")}
-        >
-          <Ionicons
-            name="grid-outline"
-            size={22}
-            color={activeTab === "photos" ? colors.text : colors.textMuted}
-          />
-          {activeTab === "photos" && (
-            <View className="absolute bottom-0 left-[25%] right-[25%] h-[2px] bg-primary rounded-full" />
-          )}
-        </Pressable>
-        <Pressable
-          className="flex-1 items-center py-2.5"
-          onPress={() => setActiveTab("text")}
-        >
-          <Ionicons
-            name="chatbubble-outline"
-            size={20}
-            color={activeTab === "text" ? colors.text : colors.textMuted}
-          />
-          {activeTab === "text" && (
-            <View className="absolute bottom-0 left-[25%] right-[25%] h-[2px] bg-primary rounded-full" />
-          )}
-        </Pressable>
-      </View>
+      <View className="mt-4 border-t border-border" style={{ borderTopWidth: 0.5 }} />
     </View>
   );
-
-  if (activeTab === "text") {
-    return (
-      <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
-        <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-          <Text className="text-xl font-bold text-text">{user?.username || "profil"}</Text>
-          <View className="flex-row gap-4">
-            <IconButton name="log-out-outline" size={24} onPress={signOut} />
-          </View>
-        </View>
-
-        <FlatList
-          key="text"
-          data={textPosts}
-          keyExtractor={(i) => i.id}
-          ListHeaderComponent={headerComponent}
-          ListEmptyComponent={() => (
-            <View className="py-[60px] items-center gap-3">
-              <Ionicons name="chatbubble-outline" size={40} color={colors.textMuted} />
-              <Text className="text-text-muted text-[15px]">Aucun message</Text>
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <TextPostRow item={item} />
-          )}
-        />
-
-        <ProfileShareSheet
-          visible={shareVisible}
-          onClose={() => setShareVisible(false)}
-          username={user?.username || ""}
-          name={profile?.name || user?.name || ""}
-          avatarUrl={profile?.avatarUrl || user?.avatarUrl || null}
-        />
-        <UsersListSheet
-          visible={followersVisible}
-          onClose={() => setFollowersVisible(false)}
-          title="Abonnés"
-          users={followers}
-          isLoading={followersLoading}
-        />
-        <UsersListSheet
-          visible={followingVisible}
-          onClose={() => setFollowingVisible(false)}
-          title="Abonnements"
-          users={following}
-          isLoading={followingLoading}
-        />
-      </View>
-    );
-  }
 
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
@@ -224,8 +113,7 @@ export default function ProfileScreen() {
       </View>
 
       <FlatList
-        key="photos"
-        data={photoPosts}
+        data={userPosts}
         keyExtractor={(i) => i.id}
         numColumns={COLS}
         columnWrapperStyle={{ gap: GAP }}
@@ -233,13 +121,21 @@ export default function ProfileScreen() {
         ListHeaderComponent={headerComponent}
         ListEmptyComponent={() => (
           <View className="py-[60px] items-center gap-3">
-            <Ionicons name="camera-outline" size={40} color={colors.textMuted} />
-            <Text className="text-text-muted text-[15px]">Aucune photo</Text>
+            <Ionicons name="create-outline" size={40} color={colors.textMuted} />
+            <Text className="text-text-muted text-[15px]">Aucune publication</Text>
           </View>
         )}
         renderItem={({ item, index }) => (
-          <Pressable onPress={() => router.push(`/posts/${user?.username}?startIndex=${index}&type=photos`)}>
-            <Image source={{ uri: item.imageUrl! }} style={{ width: TILE, height: TILE }} />
+          <Pressable onPress={() => router.push(`/posts/${user?.username}?startIndex=${index}`)}>
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} style={{ width: TILE, height: TILE }} />
+            ) : (
+              <View style={{ width: TILE, height: TILE, backgroundColor: colors.surface, padding: 8, justifyContent: "center" }}>
+                <Text className="text-text text-[11px] leading-[14px]" numberOfLines={5}>
+                  {item.caption}
+                </Text>
+              </View>
+            )}
           </Pressable>
         )}
       />

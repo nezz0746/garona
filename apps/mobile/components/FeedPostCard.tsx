@@ -6,7 +6,6 @@ import {
   Animated,
   Dimensions,
   FlatList,
-  Image,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import type { FeedPost } from "../lib/api";
 import { LinkPreviewCard } from "./LinkPreviewCard";
 import { RichText } from "./RichText";
@@ -36,6 +36,30 @@ function timeAgo(dateStr: string): string {
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   return `${days}j`;
+}
+
+function ZoomableImage({ uri, width, height }: { uri: string; width: number; height: number }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const lastScale = useRef(1);
+
+  const pinch = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.setValue(lastScale.current * e.scale);
+    })
+    .onEnd(() => {
+      lastScale.current = 1;
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20 }).start();
+    });
+
+  return (
+    <GestureDetector gesture={pinch}>
+      <Animated.Image
+        source={{ uri }}
+        style={{ width, height, transform: [{ scale }] }}
+        resizeMode="cover"
+      />
+    </GestureDetector>
+  );
 }
 
 export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Props) {
@@ -127,7 +151,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
             {/* Engagement row */}
             <View className="flex-row items-center mt-2.5 -ml-2">
               <View className="flex-row items-center flex-1">
-                <IconButton name="chatbubble-outline" size={18} onPress={onOpenComments} />
+                <IconButton name="chatbubble-outline" size={18} onPress={() => router.push(`/post/${post.id}`)} />
                 <Text className="text-text-muted text-[13px] ml-0.5">
                   {post.comments || ""}
                 </Text>
@@ -169,7 +193,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
             size={32}
           />
           <Text className="text-text font-semibold text-[13px]">
-            {post.author.username}
+            {post.author.name}
           </Text>
         </Pressable>
         <IconButton name="ellipsis-horizontal" size={20} />
@@ -187,11 +211,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
               onScroll={onScroll}
               scrollEventThrottle={16}
               renderItem={({ item }) => (
-                <Image
-                  source={{ uri: item }}
-                  style={{ width: MAX_WIDTH, height: MAX_WIDTH }}
-                  resizeMode="cover"
-                />
+                <ZoomableImage uri={item} width={MAX_WIDTH} height={MAX_WIDTH} />
               )}
             />
             {/* Dots */}
@@ -211,11 +231,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
             </View>
           </View>
         ) : (
-          <Image
-            source={{ uri: images[0] }}
-            style={{ width: MAX_WIDTH, height: MAX_WIDTH, alignSelf: "center" }}
-            resizeMode="cover"
-          />
+          <ZoomableImage uri={images[0]} width={MAX_WIDTH} height={MAX_WIDTH} />
         )}
         {/* Double-tap heart overlay */}
         {showHeart && (

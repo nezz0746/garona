@@ -8,7 +8,7 @@ export function useCreatePostMutation() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: ({ imageUrls, caption }: { imageUrls: string[]; caption?: string }) =>
+    mutationFn: ({ imageUrls = [], caption }: { imageUrls?: string[]; caption?: string }) =>
       postsApi.create(imageUrls, caption),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["feed"] });

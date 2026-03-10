@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   View, Text, Pressable, Image, ActivityIndicator,
-  Alert, FlatList, Dimensions, ScrollView,
+  Alert, FlatList, Dimensions, ScrollView, KeyboardAvoidingView, Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,38 +19,31 @@ const GALLERY_COLS = 4;
 const GALLERY_GAP = 2;
 const GALLERY_TILE = (SCREEN_W - GALLERY_GAP * (GALLERY_COLS - 1)) / GALLERY_COLS;
 
-type GalleryAsset = {
-  id: string;
-  uri: string;
-};
-
-type PostMode = "choose" | "image" | "text";
+type GalleryAsset = { id: string; uri: string };
 
 export default function CreateScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [mode, setMode] = useState<PostMode>("choose");
   const [selected, setSelected] = useState<string[]>([]);
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
   const [gallery, setGallery] = useState<GalleryAsset[]>([]);
   const [hasPermission, setHasPermission] = useState(false);
-  const [previewIndex, setPreviewIndex] = useState(0);
-  const [showCaption, setShowCaption] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const createPostMutation = useCreatePostMutation();
   const { show: showToast } = useToast();
 
   const rang = user?.rang ?? 0;
   const canPost = rang >= 2;
+  const canSubmit = caption.trim().length > 0 || selected.length > 0;
 
-  // Load gallery only when entering image mode
+  // Load gallery when expanded
   useEffect(() => {
-    if (mode !== "image") return;
+    if (!showGallery) return;
     (async () => {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") return;
       setHasPermission(true);
-
       const media = await MediaLibrary.getAssetsAsync({
         mediaType: "photo",
         first: 100,
@@ -64,33 +57,18 @@ export default function CreateScreen() {
       );
       setGallery(assets);
     })();
-  }, [mode]);
+  }, [showGallery]);
 
   const toggleSelect = (uri: string) => {
     setSelected((prev) => {
-      if (prev.includes(uri)) {
-        const next = prev.filter((u) => u !== uri);
-        if (previewIndex >= next.length) setPreviewIndex(Math.max(0, next.length - 1));
-        return next;
-      }
+      if (prev.includes(uri)) return prev.filter((u) => u !== uri);
+      if (prev.length >= 10) return prev;
       return [...prev, uri];
     });
   };
 
-  const pickTextImages = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      selectionLimit: 4,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setSelected((prev) => {
-        const newUris = result.assets.map((a) => a.uri);
-        const combined = [...prev, ...newUris];
-        return combined.slice(0, 4);
-      });
-    }
+  const removeImage = (index: number) => {
+    setSelected((prev) => prev.filter((_, i) => i !== index));
   };
 
   const takePhoto = async () => {
@@ -99,13 +77,21 @@ export default function CreateScreen() {
       Alert.alert("Permission requise", "L'accès à la caméra est nécessaire");
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setSelected((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      selectionLimit: 10 - selected.length,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setSelected((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 10));
     }
   };
 
@@ -113,52 +99,32 @@ export default function CreateScreen() {
     const filename = uri.split("/").pop() || "photo.jpg";
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
-
     const formData = new FormData();
     formData.append("file", { uri, name: filename, type } as any);
-
     const res = await fetch(`${API_URL}/api/upload`, {
-      method: "POST",
-      body: formData,
-      headers: {
-        ...((__DEV__ && user?.username) ? { "X-Dev-User": user.username } : {}),
-      },
+      method: "POST", body: formData,
+      headers: { ...((__DEV__ && user?.username) ? { "X-Dev-User": user.username } : {}) },
     });
     if (!res.ok) throw new Error("Upload échoué");
-    const data = await res.json();
-    return data.url;
+    return (await res.json()).url;
   };
 
   const handlePost = async () => {
-    if (selected.length === 0 && !caption.trim()) return;
+    if (!canSubmit) return;
     setUploading(true);
     try {
-      // Upload each image to S3/MinIO
-      const imageUrls = selected.length > 0
-        ? await Promise.all(selected.map(uploadImage))
-        : [];
+      const imageUrls = selected.length > 0 ? await Promise.all(selected.map(uploadImage)) : [];
       await createPostMutation.mutateAsync({ imageUrls, caption: caption || undefined });
       setSelected([]);
       setCaption("");
-      setShowCaption(false);
-      setMode("choose");
-      showToast({
-        message: mode === "image" ? "Ta publication est maintenant visible" : "Ton message est maintenant visible",
-        type: "success",
-      });
+      setShowGallery(false);
+      showToast({ message: "Publié !", type: "success" });
       router.navigate("/(tabs)/profile");
     } catch (e: any) {
       showToast({ message: e.message || "Impossible de publier", type: "error" });
     } finally {
       setUploading(false);
     }
-  };
-
-  const resetToChooser = () => {
-    setSelected([]);
-    setCaption("");
-    setShowCaption(false);
-    setMode("choose");
   };
 
   if (!canPost) {
@@ -175,147 +141,51 @@ export default function CreateScreen() {
     );
   }
 
-  // ── Post type chooser ──
-  if (mode === "choose") {
-    return (
-      <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
-        <View className="px-4 py-3">
-          <Text className="text-lg font-bold text-text">Nouvelle publication</Text>
-        </View>
-        <View className="flex-1 justify-center items-center gap-4 px-8">
-          <Pressable
-            onPress={() => setMode("image")}
-            className="w-full bg-surface rounded-2xl p-5 flex-row items-center gap-4"
-          >
-            <View className="w-14 h-14 rounded-full bg-primary/10 justify-center items-center">
-              <Ionicons name="images" size={28} color={colors.primary} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-text">Photo</Text>
-              <Text className="text-sm text-text-muted mt-0.5">Partage des images depuis ta galerie</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </Pressable>
-          <Pressable
-            onPress={() => setMode("text")}
-            className="w-full bg-surface rounded-2xl p-5 flex-row items-center gap-4"
-          >
-            <View className="w-14 h-14 rounded-full bg-accent/10 justify-center items-center">
-              <Ionicons name="chatbubble" size={26} color={colors.accent} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-text">Texte</Text>
-              <Text className="text-sm text-text-muted mt-0.5">Publie un message texte</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
-  // ── Text-only post ──
-  if (mode === "text") {
-    return (
-      <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
-        <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-          <Pressable onPress={resetToChooser}>
-            <Ionicons name="arrow-back" size={26} color={colors.text} />
-          </Pressable>
-          <Text className="text-lg font-bold text-text">Nouveau message</Text>
-          <Pressable
-            onPress={handlePost}
-            disabled={uploading || !caption.trim()}
-            style={{ opacity: uploading || !caption.trim() ? 0.4 : 1 }}
-          >
-            {uploading ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Text className="text-primary font-bold text-base">Partager</Text>
-            )}
-          </Pressable>
-        </View>
-
-        <ScrollView className="flex-1" contentContainerClassName="p-4">
-          <MentionTextInput
-            className="text-text text-[16px] leading-[24px] min-h-[200px]"
-            style={{ textAlignVertical: "top" }}
-            placeholder="Quoi de neuf ?"
-            placeholderTextColor={colors.textMuted}
-            value={caption}
-            onChangeText={setCaption}
-            multiline
-            maxLength={500}
-            autoFocus
-          />
-
-          {/* Attached image thumbnails */}
-          {selected.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
-              {selected.map((uri, i) => (
-                <View key={uri} className="mr-2 relative">
-                  <Image source={{ uri }} className="w-20 h-20 rounded-lg" />
-                  <Pressable
-                    className="absolute -top-1.5 -right-1.5 bg-black/70 w-5 h-5 rounded-full justify-center items-center"
-                    onPress={() => setSelected((prev) => prev.filter((_, j) => j !== i))}
-                  >
-                    <Ionicons name="close" size={12} color="#fff" />
-                  </Pressable>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-        </ScrollView>
-
-        {/* Bottom toolbar */}
-        <View className="flex-row items-center px-4 py-2.5 border-t border-border" style={{ borderTopWidth: 0.5 }}>
-          <Pressable
-            onPress={pickTextImages}
-            disabled={selected.length >= 4}
-            style={{ opacity: selected.length >= 4 ? 0.4 : 1 }}
-          >
-            <Ionicons name="image-outline" size={24} color={colors.primary} />
-          </Pressable>
-          <View className="flex-1" />
-          <Text className="text-text-muted text-xs">{caption.length}/500</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // ── Image post flow ──
   return (
-    <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
+    <KeyboardAvoidingView
+      className="flex-1 bg-bg"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ paddingTop: insets.top }}
+    >
       {/* Header */}
       <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-        <Pressable onPress={showCaption ? () => setShowCaption(false) : resetToChooser}>
-          <Ionicons name="arrow-back" size={26} color={colors.text} />
+        <Pressable onPress={() => { setSelected([]); setCaption(""); setShowGallery(false); }}>
+          <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
-        <Text className="text-lg font-bold text-text">Nouvelle photo</Text>
+        <Text className="text-lg font-bold text-text">Publier</Text>
         <Pressable
-          onPress={showCaption ? handlePost : () => setShowCaption(true)}
-          disabled={uploading || selected.length === 0}
-          style={{ opacity: uploading || selected.length === 0 ? 0.4 : 1 }}
+          onPress={handlePost}
+          disabled={!canSubmit || uploading}
+          style={{ opacity: !canSubmit || uploading ? 0.4 : 1 }}
         >
           {uploading ? (
             <ActivityIndicator size="small" color={colors.primary} />
           ) : (
-            <Text className="text-primary font-bold text-base">{showCaption ? "Partager" : "Suivant"}</Text>
+            <Text className="text-primary font-bold text-base">Publier</Text>
           )}
         </Pressable>
       </View>
 
-      {showCaption ? (
-        /* Caption step */
-        <ScrollView contentContainerClassName="p-4 gap-4">
-          <View className="flex-row gap-3">
-            {selected.length > 0 && (
-              <Image source={{ uri: selected[0] }} className="w-16 h-16 rounded-lg" />
+      {/* Compose area */}
+      <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
+        <View className="flex-row px-4 pt-3 gap-3">
+          {/* Avatar */}
+          <View className="w-10 h-10 rounded-full bg-surface overflow-hidden">
+            {user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} className="w-full h-full" />
+            ) : (
+              <View className="w-full h-full justify-center items-center">
+                <Ionicons name="person" size={20} color={colors.textMuted} />
+              </View>
             )}
+          </View>
+
+          {/* Text input */}
+          <View className="flex-1 pb-3">
             <MentionTextInput
-              className="flex-1 text-text text-[15px] leading-[22px] min-h-[80px]"
+              className="text-text text-[16px] leading-[24px] min-h-[100px]"
               style={{ textAlignVertical: "top" }}
-              placeholder="Écris une légende..."
+              placeholder="Quoi de neuf ?"
               placeholderTextColor={colors.textMuted}
               value={caption}
               onChangeText={setCaption}
@@ -324,74 +194,51 @@ export default function CreateScreen() {
               autoFocus
             />
           </View>
-          {selected.length > 1 && (
-            <ScrollView horizontal className="mt-2" showsHorizontalScrollIndicator={false}>
-              {selected.map((uri, i) => (
-                <Image key={i} source={{ uri }} className="w-20 h-20 rounded-lg mr-2" />
-              ))}
-            </ScrollView>
-          )}
-        </ScrollView>
-      ) : (
-        /* Gallery picker step */
-        <>
-          {/* Preview */}
-          <View style={{ width: SCREEN_W, height: SCREEN_W * 0.6, backgroundColor: "#000" }}>
-            {selected.length > 0 ? (
-              <>
-                <Image source={{ uri: selected[previewIndex] || selected[0] }} className="w-full h-full" resizeMode="cover" />
-                {selected.length > 1 && (
-                  <View className="absolute top-3 right-3 bg-black/60 px-2.5 py-1 rounded-xl">
-                    <Text className="text-white text-xs font-semibold">{previewIndex + 1}/{selected.length}</Text>
-                  </View>
-                )}
-                {selected.length > 1 && (
-                  <View className="absolute inset-0 flex-row items-center px-2">
-                    {previewIndex > 0 && (
-                      <Pressable className="bg-black/40 w-8 h-8 rounded-full justify-center items-center" onPress={() => setPreviewIndex(previewIndex - 1)}>
-                        <Ionicons name="chevron-back" size={20} color="#fff" />
-                      </Pressable>
-                    )}
-                    <View className="flex-1" />
-                    {previewIndex < selected.length - 1 && (
-                      <Pressable className="bg-black/40 w-8 h-8 rounded-full justify-center items-center" onPress={() => setPreviewIndex(previewIndex + 1)}>
-                        <Ionicons name="chevron-forward" size={20} color="#fff" />
-                      </Pressable>
-                    )}
-                  </View>
-                )}
-              </>
-            ) : (
-              <View className="w-full h-full justify-center items-center bg-surface">
-                <Ionicons name="images-outline" size={48} color={colors.textMuted} />
-                <Text className="text-text-muted mt-2">Sélectionne des photos</Text>
+        </View>
+
+        {/* Image previews */}
+        {selected.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-3">
+            {selected.map((uri, i) => (
+              <View key={uri} className="mr-2 relative">
+                <Image source={{ uri }} className="w-24 h-24 rounded-xl" resizeMode="cover" />
+                <Pressable
+                  className="absolute -top-1.5 -right-1.5 bg-black/70 w-5 h-5 rounded-full justify-center items-center"
+                  onPress={() => removeImage(i)}
+                >
+                  <Ionicons name="close" size={12} color="#fff" />
+                </Pressable>
               </View>
-            )}
-          </View>
+            ))}
+          </ScrollView>
+        )}
+      </ScrollView>
 
-          {/* Gallery header */}
-          <View className="flex-row justify-between items-center px-4 py-2.5">
-            <Text className="text-[15px] font-semibold text-text">
-              Galerie{selected.length > 0 ? ` (${selected.length})` : ""}
-            </Text>
-            <View className="flex-row gap-2.5 items-center">
-              <Pressable className="flex-row items-center gap-1 bg-surface rounded-2xl px-3 py-1.5">
-                <Ionicons name="copy-outline" size={18} color={colors.primary} />
-                <Text className="text-primary font-semibold text-[13px]">Multi</Text>
-              </Pressable>
-              <Pressable className="bg-primary w-8 h-8 rounded-full justify-center items-center" onPress={takePhoto}>
-                <Ionicons name="camera-outline" size={20} color="#fff" />
-              </Pressable>
-            </View>
-          </View>
+      {/* Bottom toolbar */}
+      <View className="border-t border-border" style={{ borderTopWidth: 0.5 }}>
+        <View className="flex-row items-center px-4 py-2.5 gap-4">
+          <Pressable onPress={pickFromLibrary} disabled={selected.length >= 10}>
+            <Ionicons name="image-outline" size={24} color={selected.length >= 10 ? colors.textMuted : colors.primary} />
+          </Pressable>
+          <Pressable onPress={takePhoto}>
+            <Ionicons name="camera-outline" size={24} color={colors.primary} />
+          </Pressable>
+          <Pressable onPress={() => setShowGallery(!showGallery)}>
+            <Ionicons name={showGallery ? "chevron-down" : "grid-outline"} size={22} color={colors.primary} />
+          </Pressable>
+          <View className="flex-1" />
+          <Text className="text-text-muted text-xs">{caption.length}/500</Text>
+        </View>
 
-          {/* Gallery grid */}
+        {/* Inline gallery */}
+        {showGallery && (
           <FlatList
             data={gallery}
             keyExtractor={(a) => a.id}
             numColumns={GALLERY_COLS}
             columnWrapperStyle={{ gap: GALLERY_GAP }}
             contentContainerStyle={{ gap: GALLERY_GAP }}
+            style={{ maxHeight: 300 }}
             renderItem={({ item }) => {
               const idx = selected.indexOf(item.uri);
               const isSelected = idx !== -1;
@@ -408,15 +255,15 @@ export default function CreateScreen() {
               );
             }}
             ListEmptyComponent={() => (
-              <View className="flex-1 justify-center items-center p-8">
+              <View className="justify-center items-center p-8">
                 <Text className="text-text-muted">
-                  {hasPermission ? "Aucune photo trouvée" : "Autorisation requise pour accéder à la galerie"}
+                  {hasPermission ? "Aucune photo" : "Autorisation galerie requise"}
                 </Text>
               </View>
             )}
           />
-        </>
-      )}
-    </View>
+        )}
+      </View>
+    </KeyboardAvoidingView>
   );
 }

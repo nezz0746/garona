@@ -14,11 +14,10 @@ import { postsApi } from "../../lib/api";
 import { UsersListSheet } from "../../components/UsersListSheet";
 
 export default function UserPostsScreen() {
-  const { username, startIndex, postId, type } = useLocalSearchParams<{
+  const { username, startIndex, postId } = useLocalSearchParams<{
     username: string;
     startIndex?: string;
     postId?: string;
-    type?: string;
   }>();
   const insets = useSafeAreaInsets();
   const { data: allPosts = [], isLoading } = useProfilePostsFeedQuery(username);
@@ -35,10 +34,7 @@ export default function UserPostsScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [scrolledOnce, setScrolledOnce] = useState(false);
 
-  // Filter posts based on type param
-  const posts = type === "photos"
-    ? allPosts.filter((p) => p.imageUrl || (p.imageUrls && p.imageUrls.length > 0))
-    : allPosts;
+  const posts = allPosts;
 
   // Single post thread view
   const singlePost = postId ? allPosts.find((p) => p.id === postId) : null;
