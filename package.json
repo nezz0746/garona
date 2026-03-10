@@ -28,7 +28,8 @@
     "overrides": {
       "prisma": "npm:empty-npm-package@1.0.0",
       "@prisma/client": "npm:empty-npm-package@1.0.0"
-    }
+    },
+    "neverBuiltDependencies": ["sharp"]
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
