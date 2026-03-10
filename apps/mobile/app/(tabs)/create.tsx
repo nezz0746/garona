@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as MediaLibrary from "expo-media-library";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { colors } from "@garona/shared";
 import { API_URL, useAuth } from "../../lib/auth";
 import { useCreatePostMutation } from "../../hooks/mutations/useCreatePostMutation";
@@ -95,12 +96,21 @@ export default function CreateScreen() {
     }
   };
 
+  const compressImage = async (uri: string): Promise<string> => {
+    const result = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 1200 } }],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+    );
+    return result.uri;
+  };
+
   const uploadImage = async (uri: string): Promise<string> => {
-    const filename = uri.split("/").pop() || "photo.jpg";
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+    // Compress before upload: resize to 1200px wide, 70% JPEG quality
+    const compressedUri = await compressImage(uri);
+    const filename = `photo-${Date.now()}.jpg`;
     const formData = new FormData();
-    formData.append("file", { uri, name: filename, type } as any);
+    formData.append("file", { uri: compressedUri, name: filename, type: "image/jpeg" } as any);
     const res = await fetch(`${API_URL}/api/upload`, {
       method: "POST", body: formData,
       headers: { ...((__DEV__ && user?.username) ? { "X-Dev-User": user.username } : {}) },

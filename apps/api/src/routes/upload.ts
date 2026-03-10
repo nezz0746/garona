@@ -2,7 +2,22 @@ import { Hono } from "hono";
 import { requirePermission } from "../middleware";
 import { PERMISSION } from "@garona/db";
 import crypto from "crypto";
+import sharp from "sharp";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+
+const MAX_WIDTH = 1200;
+const MAX_HEIGHT = 1200;
+const JPEG_QUALITY = 80;
+const AVATAR_SIZE = 400;
+
+async function processImage(buffer: ArrayBuffer, maxW = MAX_WIDTH, maxH = MAX_HEIGHT, quality = JPEG_QUALITY): Promise<{ data: Buffer; contentType: string }> {
+  const data = await sharp(Buffer.from(buffer))
+    .rotate() // auto-rotate based on EXIF
+    .resize(maxW, maxH, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality, mozjpeg: true })
+    .toBuffer();
+  return { data, contentType: "image/jpeg" };
+}
 
 const S3_ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:9000";
 const S3_BUCKET = process.env.S3_BUCKET || "garona";
@@ -46,18 +61,19 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
   }
 
   const userId = c.get("userId");
-  const ext = file.type === "image/png" ? "png" : "jpg";
-  const key = `posts/${userId}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
+  const key = `posts/${userId}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.jpg`;
 
   console.log(`[upload] Uploading ${file.name} (${file.type}, ${file.size} bytes) to ${S3_BUCKET}/${key}`);
 
   try {
     const arrayBuffer = await file.arrayBuffer();
+    const { data, contentType } = await processImage(arrayBuffer);
+    console.log(`[upload] Compressed: ${file.size} → ${data.length} bytes (${Math.round(data.length / 1024)}KB)`);
     await s3.send(new PutObjectCommand({
       Bucket: S3_BUCKET,
       Key: key,
-      Body: new Uint8Array(arrayBuffer),
-      ContentType: file.type,
+      Body: data,
+      ContentType: contentType,
     }));
   } catch (e: unknown) {
     console.error("[upload] S3 upload error:", e);
@@ -94,16 +110,17 @@ app.post("/avatar", async (c) => {
     return c.json({ error: "No file provided" }, 400);
   }
 
-  const ext = file.type === "image/png" ? "png" : "jpg";
-  const key = `avatars/${userId}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext}`;
+  const key = `avatars/${userId}/${Date.now()}-${crypto.randomBytes(4).toString("hex")}.jpg`;
 
   try {
     const arrayBuffer = await file.arrayBuffer();
+    const { data, contentType } = await processImage(arrayBuffer, AVATAR_SIZE, AVATAR_SIZE, 85);
+    console.log(`[upload/avatar] Compressed: ${file.size} → ${data.length} bytes (${Math.round(data.length / 1024)}KB)`);
     await s3.send(new PutObjectCommand({
       Bucket: S3_BUCKET,
       Key: key,
-      Body: new Uint8Array(arrayBuffer),
-      ContentType: file.type,
+      Body: data,
+      ContentType: contentType,
     }));
   } catch (e: unknown) {
     console.error("[upload] S3 avatar upload error:", e);
