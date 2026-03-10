@@ -35,8 +35,13 @@ export function SigninSheet({ visible, onClose, onSignedIn }: Props) {
       } else {
         setError("Connexion annulée");
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Impossible de se connecter");
+    } catch (e: any) {
+      // User cancelled the native passkey picker — not an error
+      if (e?.error === "UserCancelled" || e?.message?.includes("cancelled")) {
+        // silently ignore
+      } else {
+        setError(e instanceof Error ? e.message : "Impossible de se connecter");
+      }
     } finally {
       setLoading(false);
     }
