@@ -1,12 +1,12 @@
 import { Hono } from "hono";
-import { db, users, likes, comments, follows, posts } from "@garona/db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { db, users, likes, follows, posts } from "@garona/db";
+import { eq, desc, and, isNotNull, sql } from "drizzle-orm";
 
 const app = new Hono();
 
 type Activity = {
   id: string;
-  type: "like" | "comment" | "follow";
+  type: "like" | "reply" | "follow";
   actor: { id: string; username: string; name: string; avatarUrl: string | null };
   text?: string;
   postId?: string;
@@ -14,7 +14,7 @@ type Activity = {
   createdAt: string;
 };
 
-// Get activity (likes, comments, follows on my content)
+// Get activity (likes, replies, follows on my content)
 app.get("/", async (c) => {
   const userId = c.get("userId");
   if (!userId) return c.json([]);
@@ -51,35 +51,39 @@ app.get("/", async (c) => {
     });
   }
 
-  // Comments on my posts
-  const myComments = await db
+  // Replies to my posts (posts where parentId is one of my posts)
+  // We alias the posts table for the reply and the parent
+  const myReplies = await db
     .select({
-      commentId: comments.id,
-      commentText: comments.text,
-      commentCreatedAt: comments.createdAt,
+      replyId: posts.id,
+      replyCaption: posts.caption,
+      replyCreatedAt: posts.createdAt,
+      parentId: posts.parentId,
       actorId: users.id,
       actorUsername: users.username,
       actorName: users.name,
       actorAvatar: users.avatarUrl,
-      postId: posts.id,
-      postImage: posts.imageUrl,
     })
-    .from(comments)
-    .innerJoin(posts, eq(comments.postId, posts.id))
-    .innerJoin(users, eq(comments.authorId, users.id))
-    .where(and(eq(posts.authorId, userId), sql`${comments.authorId} != ${userId}`))
-    .orderBy(desc(comments.createdAt))
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .where(
+      and(
+        isNotNull(posts.parentId),
+        sql`${posts.parentId} IN (SELECT id FROM posts WHERE author_id = ${userId})`,
+        sql`${posts.authorId} != ${userId}`,
+      ),
+    )
+    .orderBy(desc(posts.createdAt))
     .limit(limit);
 
-  for (const cm of myComments) {
+  for (const r of myReplies) {
     results.push({
-      id: `comment-${cm.commentId}`,
-      type: "comment",
-      actor: { id: cm.actorId, username: cm.actorUsername, name: cm.actorName, avatarUrl: cm.actorAvatar },
-      text: cm.commentText,
-      postId: cm.postId,
-      postImage: cm.postImage,
-      createdAt: cm.commentCreatedAt?.toISOString() || new Date().toISOString(),
+      id: `reply-${r.replyId}`,
+      type: "reply",
+      actor: { id: r.actorId, username: r.actorUsername, name: r.actorName, avatarUrl: r.actorAvatar },
+      text: r.replyCaption,
+      postId: r.parentId!,
+      createdAt: r.replyCreatedAt?.toISOString() || new Date().toISOString(),
     });
   }
 

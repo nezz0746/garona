@@ -1,10 +1,10 @@
+import { eq } from "drizzle-orm";
 import { db } from "./client";
 import {
   users,
   vouches,
   posts,
   likes,
-  comments,
   follows,
   stories,
 } from "./schema";
@@ -15,7 +15,6 @@ async function seed() {
 
   // Clean
   await db.delete(stories);
-  await db.delete(comments);
   await db.delete(likes);
   await db.delete(follows);
   await db.delete(vouches);
@@ -319,8 +318,8 @@ async function seed() {
   await db.insert(likes).values(likeValues);
   console.log(`  ✅ ${likeValues.length} likes`);
 
-  // ─── Comments ───
-  const commentTexts = [
+  // ─── Replies (posts with parentId) ───
+  const replyTexts = [
     "Magnifique ! 😍",
     "J'adore cet endroit",
     "Trop beau 🔥",
@@ -334,25 +333,33 @@ async function seed() {
     "Classique !",
     "La ville rose 🌸",
   ];
-  const commentValues: { postId: string; authorId: string; text: string }[] =
-    [];
+  const replyValues: { authorId: string; parentId: string; caption: string; imageCount: number }[] = [];
   for (const post of insertedPosts) {
-    const numComments = 1 + Math.floor(Math.random() * 4);
-    const commenters = new Set<number>();
-    while (commenters.size < numComments) {
+    const numReplies = 1 + Math.floor(Math.random() * 4);
+    const repliers = new Set<number>();
+    while (repliers.size < numReplies) {
       const idx = Math.floor(Math.random() * 10);
-      if (u[idx].id !== post.authorId) commenters.add(idx);
+      if (u[idx].id !== post.authorId) repliers.add(idx);
     }
-    for (const idx of commenters) {
-      commentValues.push({
-        postId: post.id,
+    for (const idx of repliers) {
+      replyValues.push({
         authorId: u[idx].id,
-        text: commentTexts[Math.floor(Math.random() * commentTexts.length)],
+        parentId: post.id,
+        caption: replyTexts[Math.floor(Math.random() * replyTexts.length)],
+        imageCount: 0,
       });
     }
   }
-  await db.insert(comments).values(commentValues);
-  console.log(`  ✅ ${commentValues.length} comments`);
+  const insertedReplies = await db.insert(posts).values(replyValues).returning();
+  // Update reply counts on parent posts
+  const replyCounts: Record<string, number> = {};
+  for (const r of insertedReplies) {
+    if (r.parentId) replyCounts[r.parentId] = (replyCounts[r.parentId] || 0) + 1;
+  }
+  for (const [parentId, count] of Object.entries(replyCounts)) {
+    await db.update(posts).set({ replyCount: count }).where(eq(posts.id, parentId));
+  }
+  console.log(`  ✅ ${replyValues.length} replies`);
 
   // ─── Follows ───
   const followValues: { followerId: string; followingId: string }[] = [];

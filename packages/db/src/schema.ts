@@ -104,6 +104,8 @@ export const vouches = pgTable(
 );
 
 // ─── Posts ───
+// Everything is a post: top-level posts, replies, threads.
+// parentId links replies to their parent post.
 export const posts = pgTable(
   "posts",
   {
@@ -111,14 +113,17 @@ export const posts = pgTable(
     authorId: uuid("author_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    parentId: uuid("parent_id"), // self-ref: null = top-level, set = reply
     imageUrl: text("image_url"), // first/cover image, null for text-only posts
     caption: text("caption"),
     imageCount: integer("image_count").default(1).notNull(),
+    replyCount: integer("reply_count").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [
     index("posts_author_idx").on(t.authorId),
     index("posts_created_idx").on(t.createdAt),
+    index("posts_parent_idx").on(t.parentId),
   ],
 );
 
@@ -151,23 +156,6 @@ export const likes = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [uniqueIndex("likes_unique_idx").on(t.postId, t.userId)],
-);
-
-// ─── Comments ───
-export const comments = pgTable(
-  "comments",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    postId: uuid("post_id")
-      .notNull()
-      .references(() => posts.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    text: text("text").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => [index("comments_post_idx").on(t.postId)],
 );
 
 // ─── Follows ───

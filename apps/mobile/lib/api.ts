@@ -45,10 +45,13 @@ export type FeedPost = {
   imageUrl: string | null;
   imageUrls?: string[];
   imageCount?: number;
+  parentId?: string | null;
   createdAt: string;
+  authorId: string;
   author: { id: string; username: string; name: string; avatarUrl: string | null };
   likes: number;
-  comments: number;
+  comments: number; // reply count (backward compat name)
+  replies?: number;
   liked: boolean;
   linkPreviews?: LinkPreview[];
 };
@@ -63,6 +66,22 @@ export const feedApi = {
 };
 
 // ─── Posts ───
+export type Reply = {
+  id: string;
+  parentId: string;
+  authorId: string;
+  caption: string | null;
+  imageUrl: string | null;
+  imageUrls?: string[];
+  imageCount: number;
+  createdAt: string;
+  likes: number;
+  liked: boolean;
+  replies: number;
+  author: { id: string; username: string; name: string; avatarUrl: string | null };
+};
+
+// Backward compat alias
 export type Comment = {
   id: string;
   postId: string;
@@ -73,10 +92,15 @@ export type Comment = {
 };
 
 export const postsApi = {
-  create: (imageUrls: string[], caption?: string) =>
-    apiFetch<{ id: string }>("/api/posts", { method: "POST", body: JSON.stringify({ imageUrls, caption }) }),
+  create: (opts: { imageUrls?: string[]; caption?: string; parentId?: string }) =>
+    apiFetch<{ id: string }>("/api/posts", { method: "POST", body: JSON.stringify(opts) }),
   like: (postId: string) =>
     apiFetch<{ liked: boolean }>(`/api/posts/${postId}/like`, { method: "POST" }),
+  reply: (postId: string, text: string, imageUrls?: string[]) =>
+    apiFetch<{ id: string }>("/api/posts", { method: "POST", body: JSON.stringify({ parentId: postId, caption: text, imageUrls }) }),
+  replies: (postId: string) =>
+    apiFetch<Reply[]>(`/api/posts/${postId}/replies`),
+  // Backward compat
   comment: (postId: string, text: string) =>
     apiFetch<{ id: string }>(`/api/posts/${postId}/comment`, { method: "POST", body: JSON.stringify({ text }) }),
   comments: (postId: string) =>

@@ -1,10 +1,10 @@
 import { Hono } from "hono";
-import { db, posts, postImages, users, likes, comments, follows, linkPreviews, postLinkPreviews } from "@garona/db";
-import { eq, desc, sql, and, inArray } from "drizzle-orm";
+import { db, posts, postImages, users, likes, follows, linkPreviews, postLinkPreviews } from "@garona/db";
+import { eq, desc, sql, and, isNull, inArray } from "drizzle-orm";
 
 const app = new Hono();
 
-// Discovery feed — all posts, newest first
+// Discovery feed — top-level posts only, newest first
 app.get("/discover", async (c) => {
   const userId = c.get("userId") || null;
   const limit = Number(c.req.query("limit") || 20);
@@ -14,6 +14,7 @@ app.get("/discover", async (c) => {
     .select()
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
+    .where(isNull(posts.parentId))
     .orderBy(desc(posts.createdAt))
     .limit(limit)
     .offset(offset);
@@ -35,13 +36,13 @@ app.get("/following", async (c) => {
     .where(eq(follows.followerId, userId));
 
   const followingIds = myFollows.map((f) => f.followingId);
-  followingIds.push(userId); // include own posts
+  followingIds.push(userId);
 
   const feedPosts = await db
     .select()
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
-    .where(inArray(posts.authorId, followingIds))
+    .where(and(inArray(posts.authorId, followingIds), isNull(posts.parentId)))
     .orderBy(desc(posts.createdAt))
     .limit(limit)
     .offset(offset);
@@ -49,7 +50,7 @@ app.get("/following", async (c) => {
   return c.json(await enrichPosts(feedPosts, userId));
 });
 
-// Default feed — kept for backward compat, returns discovery
+// Default feed
 app.get("/", async (c) => {
   const userId = c.get("userId") || null;
   const limit = Number(c.req.query("limit") || 20);
@@ -59,6 +60,7 @@ app.get("/", async (c) => {
     .select()
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
+    .where(isNull(posts.parentId))
     .orderBy(desc(posts.createdAt))
     .limit(limit)
     .offset(offset);
@@ -83,7 +85,7 @@ app.get("/:postId", async (c) => {
   return c.json(enriched[0]);
 });
 
-// Helper: add likes count, comment count, liked status
+// Helper: enrich posts with likes, reply counts, images, link previews
 export async function enrichPosts(
   rawPosts: { posts: typeof posts.$inferSelect; users: typeof users.$inferSelect }[],
   currentUserId: string | null
@@ -98,13 +100,6 @@ export async function enrichPosts(
     .from(likes)
     .where(inArray(likes.postId, postIds))
     .groupBy(likes.postId);
-
-  // Comment counts
-  const commentCounts = await db
-    .select({ postId: comments.postId, count: sql<number>`count(*)` })
-    .from(comments)
-    .where(inArray(comments.postId, postIds))
-    .groupBy(comments.postId);
 
   // My likes
   const myLikes = currentUserId
@@ -127,7 +122,7 @@ export async function enrichPosts(
     imagesMap[img.postId].push(img.imageUrl);
   }
 
-  // Link previews (table may not exist yet if migration hasn't run)
+  // Link previews
   const linkPreviewMap: Record<string, { url: string; title: string | null; description: string | null; imageUrl: string | null; domain: string | null }[]> = {};
   try {
     const allLinkPreviews = await db
@@ -160,7 +155,6 @@ export async function enrichPosts(
   }
 
   const likeMap = Object.fromEntries(likeCounts.map((l) => [l.postId, Number(l.count)]));
-  const commentMap = Object.fromEntries(commentCounts.map((c) => [c.postId, Number(c.count)]));
   const myLikeSet = new Set(myLikes.map((l) => l.postId));
 
   return rawPosts.map((p) => ({
@@ -169,7 +163,9 @@ export async function enrichPosts(
     imageUrl: p.posts.imageUrl ?? null,
     imageUrls: imagesMap[p.posts.id] || (p.posts.imageUrl ? [p.posts.imageUrl] : []),
     imageCount: p.posts.imageCount,
+    parentId: p.posts.parentId ?? null,
     createdAt: p.posts.createdAt,
+    authorId: p.posts.authorId,
     author: {
       id: p.users.id,
       username: p.users.username,
@@ -177,7 +173,8 @@ export async function enrichPosts(
       avatarUrl: p.users.avatarUrl,
     },
     likes: likeMap[p.posts.id] || 0,
-    comments: commentMap[p.posts.id] || 0,
+    comments: p.posts.replyCount, // backward compat field name
+    replies: p.posts.replyCount,
     liked: myLikeSet.has(p.posts.id),
     linkPreviews: linkPreviewMap[p.posts.id] || [],
   }));

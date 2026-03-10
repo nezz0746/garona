@@ -1,5 +1,5 @@
 import { db, follows, posts, users, vouches, PERMISSION } from "@garona/db";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { getUserRang, requirePermission } from "../middleware";
 import { notifyUser } from "../lib/push";
@@ -139,7 +139,7 @@ app.get("/:username/posts", async (c) => {
       .select()
       .from(posts)
       .innerJoin(users, eq(posts.authorId, users.id))
-      .where(eq(posts.authorId, user.id))
+      .where(and(eq(posts.authorId, user.id), isNull(posts.parentId)))
       .orderBy(sql`${posts.createdAt} desc`)
       .limit(limit);
     return c.json(await enrichPosts(rawPosts, currentUserId));
@@ -153,7 +153,7 @@ app.get("/:username/posts", async (c) => {
       createdAt: posts.createdAt,
     })
     .from(posts)
-    .where(eq(posts.authorId, user.id))
+    .where(and(eq(posts.authorId, user.id), isNull(posts.parentId)))
     .orderBy(sql`${posts.createdAt} desc`)
     .limit(limit);
 

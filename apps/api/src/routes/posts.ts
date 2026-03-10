@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { db, posts, postImages, likes, comments, users, linkPreviews, postLinkPreviews } from "@garona/db";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { db, posts, postImages, likes, users, linkPreviews, postLinkPreviews } from "@garona/db";
+import { eq, and, sql, isNull, inArray } from "drizzle-orm";
 import { requirePermission } from "../middleware";
 import { PERMISSION } from "@garona/db";
 import { scrapeMetadata } from "../lib/scrape";
@@ -14,7 +14,7 @@ async function notifyMentions(
   authorId: string,
   authorName: string,
   postId: string,
-  context: "publication" | "commentaire",
+  context: "publication" | "réponse",
 ) {
   const mentionRegex = /@([a-zA-Z0-9_]+)/g;
   const usernames = [...new Set(Array.from(text.matchAll(mentionRegex), (m) => m[1]))];
@@ -38,28 +38,41 @@ async function notifyMentions(
   }).catch(() => {});
 }
 
-// Create post (requires POST permission)
-// Accepts { imageUrl, caption } or { imageUrls: string[], caption }
+// Create post or reply
+// Accepts { imageUrls?, caption?, parentId? }
 app.post("/", requirePermission(PERMISSION.POST), async (c) => {
   const userId = c.get("userId");
   const body = await c.req.json();
-  const { caption } = body;
+  const { caption, parentId } = body;
 
-  // Support both single and multi-image, and text-only posts
   const imageUrls: string[] = body.imageUrls || (body.imageUrl ? [body.imageUrl] : []);
   if (imageUrls.length === 0 && !caption?.trim()) {
     return c.json({ error: "Caption or image required" }, 400);
+  }
+
+  // If reply, verify parent exists
+  if (parentId) {
+    const [parent] = await db.select({ id: posts.id }).from(posts).where(eq(posts.id, parentId));
+    if (!parent) return c.json({ error: "Parent post not found" }, 404);
   }
 
   const [post] = await db
     .insert(posts)
     .values({
       authorId: userId,
-      imageUrl: imageUrls[0] || null, // cover image, null for text-only
+      parentId: parentId || null,
+      imageUrl: imageUrls[0] || null,
       caption,
       imageCount: imageUrls.length,
     })
     .returning();
+
+  // Increment parent's reply count
+  if (parentId) {
+    await db.update(posts)
+      .set({ replyCount: sql`${posts.replyCount} + 1` })
+      .where(eq(posts.id, parentId));
+  }
 
   // Insert all images into postImages
   if (imageUrls.length > 0) {
@@ -112,17 +125,35 @@ app.post("/", requirePermission(PERMISSION.POST), async (c) => {
     }
   }
 
+  // Notify parent author if this is a reply (fire-and-forget)
+  if (parentId) {
+    const replyAuthorId = userId as string;
+    db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, parentId)).then(([parent]) => {
+      if (parent && parent.authorId !== replyAuthorId) {
+        db.select({ name: users.name }).from(users).where(eq(users.id, replyAuthorId)).then(([replier]) => {
+          if (replier) {
+            notifyUser(parent.authorId, {
+              title: "Nouvelle réponse",
+              body: `${replier.name} a répondu : ${(caption || "").trim().slice(0, 80)}`,
+              data: { type: "reply", postId: post.id, parentId },
+            }).catch(() => {});
+          }
+        });
+      }
+    });
+  }
+
   // Notify mentioned users (fire-and-forget)
   if (caption) {
     db.select({ name: users.name }).from(users).where(eq(users.id, userId)).then(([author]) => {
-      if (author) notifyMentions(caption, userId, author.name, post.id, "publication");
+      if (author) notifyMentions(caption, userId, author.name, post.id, parentId ? "réponse" : "publication");
     });
   }
 
   return c.json(post, 201);
 });
 
-// Like post (requires LIKE permission)
+// Like post (requires LIKE permission) — works for both posts and replies
 app.post("/:postId/like", requirePermission(PERMISSION.LIKE), async (c) => {
   const userId = c.get("userId");
   const postId = c.req.param("postId");
@@ -130,7 +161,6 @@ app.post("/:postId/like", requirePermission(PERMISSION.LIKE), async (c) => {
   try {
     await db.insert(likes).values({ postId, userId });
 
-    // Notify post author (fire-and-forget, skip if self-like)
     const likerId = userId as string;
     const likedPostId = postId as string;
     db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, likedPostId)).then(([post]) => {
@@ -149,7 +179,6 @@ app.post("/:postId/like", requirePermission(PERMISSION.LIKE), async (c) => {
 
     return c.json({ liked: true });
   } catch {
-    // Already liked — unlike
     await db
       .delete(likes)
       .where(and(eq(likes.postId, postId), eq(likes.userId, userId)));
@@ -157,7 +186,111 @@ app.post("/:postId/like", requirePermission(PERMISSION.LIKE), async (c) => {
   }
 });
 
-// Comment on post (requires COMMENT permission)
+// Get replies for a post (replaces old comments endpoint)
+app.get("/:postId/replies", async (c) => {
+  const postId = c.req.param("postId");
+  const currentUserId = c.get("userId") || null;
+
+  const replies = await db
+    .select()
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .where(eq(posts.parentId, postId))
+    .orderBy(posts.createdAt);
+
+  if (replies.length === 0) return c.json([]);
+
+  // Enrich replies with like counts + liked status
+  const replyIds = replies.map((r) => r.posts.id);
+
+  const likeCounts = await db
+    .select({ postId: likes.postId, count: sql<number>`count(*)` })
+    .from(likes)
+    .where(inArray(likes.postId, replyIds))
+    .groupBy(likes.postId);
+
+  const myLikes = currentUserId
+    ? await db.select({ postId: likes.postId }).from(likes)
+        .where(and(inArray(likes.postId, replyIds), eq(likes.userId, currentUserId)))
+    : [];
+
+  // Sub-reply counts
+  const subReplyCounts = await db
+    .select({ parentId: posts.parentId, count: sql<number>`count(*)` })
+    .from(posts)
+    .where(inArray(posts.parentId, replyIds))
+    .groupBy(posts.parentId);
+
+  const likeMap = Object.fromEntries(likeCounts.map((l) => [l.postId, Number(l.count)]));
+  const myLikeSet = new Set(myLikes.map((l) => l.postId));
+  const subReplyMap = Object.fromEntries(subReplyCounts.map((r) => [r.parentId!, Number(r.count)]));
+
+  // Get images for replies
+  const allImages = await db
+    .select({ postId: postImages.postId, imageUrl: postImages.imageUrl, position: postImages.position })
+    .from(postImages)
+    .where(inArray(postImages.postId, replyIds))
+    .orderBy(postImages.position);
+
+  const imagesMap: Record<string, string[]> = {};
+  for (const img of allImages) {
+    if (!imagesMap[img.postId]) imagesMap[img.postId] = [];
+    imagesMap[img.postId].push(img.imageUrl);
+  }
+
+  return c.json(
+    replies.map((r) => ({
+      id: r.posts.id,
+      parentId: r.posts.parentId,
+      authorId: r.posts.authorId,
+      caption: r.posts.caption,
+      imageUrl: r.posts.imageUrl,
+      imageUrls: imagesMap[r.posts.id] || (r.posts.imageUrl ? [r.posts.imageUrl] : []),
+      imageCount: r.posts.imageCount,
+      createdAt: r.posts.createdAt,
+      likes: likeMap[r.posts.id] || 0,
+      liked: myLikeSet.has(r.posts.id),
+      replies: subReplyMap[r.posts.id] || 0,
+      author: {
+        id: r.users.id,
+        username: r.users.username,
+        name: r.users.name,
+        avatarUrl: r.users.avatarUrl,
+      },
+    }))
+  );
+});
+
+// Backward compat: /comments → /replies
+app.get("/:postId/comments", async (c) => {
+  const postId = c.req.param("postId");
+  const currentUserId = c.get("userId") || null;
+
+  // Fetch replies and map to old comment shape
+  const replies = await db
+    .select()
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .where(eq(posts.parentId, postId))
+    .orderBy(posts.createdAt);
+
+  return c.json(
+    replies.map((r) => ({
+      id: r.posts.id,
+      postId: postId,
+      authorId: r.posts.authorId,
+      text: r.posts.caption || "",
+      createdAt: r.posts.createdAt,
+      author: {
+        username: r.users.username,
+        name: r.users.name,
+        avatarUrl: r.users.avatarUrl,
+      },
+    }))
+  );
+});
+
+// Backward compat: POST /comment → create reply
 app.post("/:postId/comment", requirePermission(PERMISSION.COMMENT), async (c) => {
   const userId = c.get("userId");
   const postId = c.req.param("postId");
@@ -165,66 +298,44 @@ app.post("/:postId/comment", requirePermission(PERMISSION.COMMENT), async (c) =>
 
   if (!text?.trim()) return c.json({ error: "Text required" }, 400);
 
-  const [comment] = await db
-    .insert(comments)
-    .values({ postId, authorId: userId, text: text.trim() })
+  // Create a reply post
+  const [reply] = await db
+    .insert(posts)
+    .values({
+      authorId: userId,
+      parentId: postId,
+      caption: text.trim(),
+      imageCount: 0,
+    })
     .returning();
 
-  // Notify post author (fire-and-forget, skip if self-comment)
-  const commenterId = userId as string;
-  const commentedPostId = postId as string;
-  db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, commentedPostId)).then(([post]) => {
-    if (post && post.authorId !== commenterId) {
-      db.select({ name: users.name }).from(users).where(eq(users.id, commenterId)).then(([commenter]) => {
-        if (commenter) {
-          notifyUser(post.authorId, {
-            title: "Nouveau commentaire",
-            body: `${commenter.name} a commenté : ${text.trim().slice(0, 80)}`,
-            data: { type: "comment", postId: commentedPostId },
+  // Increment parent reply count
+  await db.update(posts)
+    .set({ replyCount: sql`${posts.replyCount} + 1` })
+    .where(eq(posts.id, postId));
+
+  // Notify parent author (fire-and-forget)
+  const replyAuthorId = userId as string;
+  db.select({ authorId: posts.authorId }).from(posts).where(eq(posts.id, postId)).then(([parent]) => {
+    if (parent && parent.authorId !== replyAuthorId) {
+      db.select({ name: users.name }).from(users).where(eq(users.id, replyAuthorId)).then(([replier]) => {
+        if (replier) {
+          notifyUser(parent.authorId, {
+            title: "Nouvelle réponse",
+            body: `${replier.name} a répondu : ${text.trim().slice(0, 80)}`,
+            data: { type: "reply", postId: reply.id, parentId: postId },
           }).catch(() => {});
         }
       });
     }
   });
 
-  // Notify mentioned users in comment (fire-and-forget)
+  // Notify mentions
   db.select({ name: users.name }).from(users).where(eq(users.id, userId)).then(([author]) => {
-    if (author) notifyMentions(text.trim(), userId, author.name, postId, "commentaire");
+    if (author) notifyMentions(text.trim(), userId, author.name, reply.id, "réponse");
   });
 
-  return c.json(comment, 201);
-});
-
-// Get comments for a post
-app.get("/:postId/comments", async (c) => {
-  const postId = c.req.param("postId");
-
-  const result = await db
-    .select({
-      id: comments.id,
-      postId: comments.postId,
-      authorId: comments.authorId,
-      text: comments.text,
-      createdAt: comments.createdAt,
-      authorUsername: users.username,
-      authorName: users.name,
-      authorAvatar: users.avatarUrl,
-    })
-    .from(comments)
-    .innerJoin(users, eq(comments.authorId, users.id))
-    .where(eq(comments.postId, postId))
-    .orderBy(comments.createdAt);
-
-  return c.json(
-    result.map((r) => ({
-      id: r.id,
-      postId: r.postId,
-      authorId: r.authorId,
-      text: r.text,
-      createdAt: r.createdAt,
-      author: { username: r.authorUsername, name: r.authorName, avatarUrl: r.authorAvatar },
-    }))
-  );
+  return c.json(reply, 201);
 });
 
 // Get users who liked a post
@@ -255,6 +366,13 @@ app.delete("/:postId", async (c) => {
   const [post] = await db.select().from(posts).where(eq(posts.id, postId));
   if (!post) return c.json({ error: "Not found" }, 404);
   if (post.authorId !== userId) return c.json({ error: "Not yours" }, 403);
+
+  // If deleting a reply, decrement parent's reply count
+  if (post.parentId) {
+    await db.update(posts)
+      .set({ replyCount: sql`GREATEST(${posts.replyCount} - 1, 0)` })
+      .where(eq(posts.id, post.parentId));
+  }
 
   await db.delete(posts).where(eq(posts.id, postId));
   return c.json({ deleted: true });
