@@ -11,6 +11,7 @@ import { ProfileShareSheet } from "../../components/ProfileShareSheet";
 import { UsersListSheet } from "../../components/UsersListSheet";
 import { CommentsSheet } from "../../components/CommentsSheet";
 import { FeedPostCard } from "../../components/FeedPostCard";
+import { ActivityList } from "../../components/ActivityList";
 import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 import { postsApi } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -20,11 +21,46 @@ import { useVouchesMeQuery } from "../../hooks/queries/useVouchesMeQuery";
 import { queryKeys } from "../../lib/queryKeys";
 import { profilesApi } from "../../lib/api";
 
+type ProfileTab = "posts" | "activity";
+
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <View className="items-center">
       <Text className="text-text font-bold text-base">{value.toLocaleString()}</Text>
       <Text className="text-text-secondary text-xs mt-0.5">{label}</Text>
+    </View>
+  );
+}
+
+function TabSwitcher({ active, onChange }: { active: ProfileTab; onChange: (t: ProfileTab) => void }) {
+  return (
+    <View className="flex-row border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+      <Pressable
+        className="flex-1 items-center py-3"
+        onPress={() => onChange("posts")}
+      >
+        <Ionicons
+          name={active === "posts" ? "grid" : "grid-outline"}
+          size={22}
+          color={active === "posts" ? colors.text : colors.textMuted}
+        />
+        {active === "posts" && (
+          <View className="absolute bottom-0 left-[25%] right-[25%] h-[2px] bg-text rounded-full" />
+        )}
+      </Pressable>
+      <Pressable
+        className="flex-1 items-center py-3"
+        onPress={() => onChange("activity")}
+      >
+        <Ionicons
+          name={active === "activity" ? "heart" : "heart-outline"}
+          size={22}
+          color={active === "activity" ? colors.text : colors.textMuted}
+        />
+        {active === "activity" && (
+          <View className="absolute bottom-0 left-[25%] right-[25%] h-[2px] bg-text rounded-full" />
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -36,6 +72,7 @@ export default function ProfileScreen() {
   const { data: userPosts = [] } = useProfilePostsQuery(user?.username || "");
   const { data: vouchInfo } = useVouchesMeQuery();
   const likeMutation = useLikeMutation();
+  const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
   const [shareVisible, setShareVisible] = useState(false);
   const [followersVisible, setFollowersVisible] = useState(false);
   const [followingVisible, setFollowingVisible] = useState(false);
@@ -68,7 +105,7 @@ export default function ProfileScreen() {
     );
   }
 
-  const headerComponent = () => (
+  const profileHeader = () => (
     <View>
       {/* Profile info */}
       <View className="flex-row items-center px-4 pt-4 gap-6">
@@ -107,7 +144,10 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <View className="mt-4 border-t border-border" style={{ borderTopWidth: 0.5 }} />
+      <View className="mt-4" />
+
+      {/* Tab switcher */}
+      <TabSwitcher active={activeTab} onChange={setActiveTab} />
     </View>
   );
 
@@ -120,25 +160,29 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <FlatList
-        data={userPosts}
-        keyExtractor={(i) => i.id}
-        ListHeaderComponent={headerComponent}
-        ListEmptyComponent={() => (
-          <View className="py-[60px] items-center gap-3">
-            <Ionicons name="create-outline" size={40} color={colors.textMuted} />
-            <Text className="text-text-muted text-[15px]">Aucune publication</Text>
-          </View>
-        )}
-        renderItem={({ item }) => (
-          <FeedPostCard
-            post={item}
-            onLike={() => likeMutation.mutate(item.id)}
-            onOpenComments={() => setCommentPostId(item.id)}
-            onOpenLikes={() => setLikesPostId(item.id)}
-          />
-        )}
-      />
+      {activeTab === "posts" ? (
+        <FlatList
+          data={userPosts}
+          keyExtractor={(i) => i.id}
+          ListHeaderComponent={profileHeader}
+          ListEmptyComponent={() => (
+            <View className="py-[60px] items-center gap-3">
+              <Ionicons name="create-outline" size={40} color={colors.textMuted} />
+              <Text className="text-text-muted text-[15px]">Aucune publication</Text>
+            </View>
+          )}
+          renderItem={({ item }) => (
+            <FeedPostCard
+              post={item}
+              onLike={() => likeMutation.mutate(item.id)}
+              onOpenComments={() => setCommentPostId(item.id)}
+              onOpenLikes={() => setLikesPostId(item.id)}
+            />
+          )}
+        />
+      ) : (
+        <ActivityList ListHeaderComponent={profileHeader()} />
+      )}
 
       {commentPostId && (
         <CommentsSheet
