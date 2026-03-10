@@ -136,7 +136,10 @@ export default function PostThreadScreen() {
       {/* Post body */}
       <View className="px-4 pt-3 pb-3">
         {post.caption ? (
-          <RichText className="text-text text-[17px] leading-[24px]">
+          <RichText
+            className="text-text text-[17px] leading-[24px]"
+            hideUrls={post.linkPreviews?.map((lp) => lp.url)}
+          >
             {post.caption}
           </RichText>
         ) : null}

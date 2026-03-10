@@ -142,7 +142,10 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
           {/* Body */}
           <Pressable onPress={() => router.push(`/post/${post.id}`)}>
             {post.caption ? (
-              <RichText className="text-text text-[15px] leading-[22px] mt-1">
+              <RichText
+                className="text-text text-[15px] leading-[22px] mt-1"
+                hideUrls={post.linkPreviews?.map((lp) => lp.url)}
+              >
                 {post.caption}
               </RichText>
             ) : null}
