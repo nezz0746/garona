@@ -23,23 +23,28 @@ app.use("*", cors({
   credentials: true,
 }));
 
-// BetterAuth handler
+// BetterAuth handler — inject Origin header for native passkey requests
 app.on(["POST", "GET"], "/api/auth/*", async (c) => {
-  // Debug passkey origin
-  if (c.req.path.includes("verify-authentication") || c.req.path.includes("verify-registration")) {
-    const origin = c.req.header("origin");
-    const body = await c.req.raw.clone().json().catch(() => null);
-    const clientData = body?.response?.response?.clientDataJSON;
-    if (clientData) {
-      try {
-        const decoded = JSON.parse(Buffer.from(clientData, "base64url").toString());
-        console.log("[passkey-debug] clientDataJSON origin:", decoded.origin);
-      } catch {}
-    }
-    console.log("[passkey-debug] HTTP Origin header:", origin || "MISSING");
-    console.log("[passkey-debug] PASSKEY_ORIGIN env:", process.env.PASSKEY_ORIGIN);
+  const req = c.req.raw;
+  const origin = req.headers.get("origin");
+
+  // Native iOS/Android apps don't send Origin header.
+  // BetterAuth passkey plugin requires it for verification.
+  // Inject it from PASSKEY_ORIGIN when missing.
+  if (!origin && process.env.PASSKEY_ORIGIN) {
+    const headers = new Headers(req.headers);
+    headers.set("origin", process.env.PASSKEY_ORIGIN);
+    const patched = new Request(req.url, {
+      method: req.method,
+      headers,
+      body: req.body,
+      // @ts-ignore - duplex needed for streaming body
+      duplex: "half",
+    });
+    return auth.handler(patched);
   }
-  return auth.handler(c.req.raw);
+
+  return auth.handler(req);
 });
 
 // Auth middleware for protected routes
