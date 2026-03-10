@@ -3,15 +3,12 @@ import { Avatar, IconButton } from "@garona/ui";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  ActionSheetIOS,
-  Alert,
   Animated,
   Dimensions,
   FlatList,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Image,
-  Platform,
   Pressable,
   Share,
   Text,
@@ -23,6 +20,7 @@ import type { FeedPost } from "../lib/api";
 import { postsApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { LinkPreviewCard } from "./LinkPreviewCard";
+import { PostMenuSheet } from "./PostMenuSheet";
 import { RichText } from "./RichText";
 
 const MAX_WIDTH = Math.min(Dimensions.get("window").width, 600);
@@ -56,6 +54,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
   const qc = useQueryClient();
 
   const isOwn = user?.id === post.authorId;
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.delete(post.id),
@@ -64,43 +63,6 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
       qc.invalidateQueries({ queryKey: ["profilePosts"] });
     },
   });
-
-  const confirmDelete = () => {
-    Alert.alert(
-      "Supprimer la publication",
-      "Es-tu sûr de vouloir supprimer cette publication ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        { text: "Supprimer", style: "destructive", onPress: () => deleteMutation.mutate() },
-      ],
-    );
-  };
-
-  const handleMenu = () => {
-    const ownOptions = ["Supprimer", "Annuler"];
-    const otherOptions = ["Signaler", "Annuler"];
-    const options = isOwn ? ownOptions : otherOptions;
-    const destructiveIndex = 0;
-    const cancelIndex = options.length - 1;
-
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, destructiveButtonIndex: destructiveIndex, cancelButtonIndex: cancelIndex },
-        (index) => {
-          if (isOwn && index === 0) confirmDelete();
-          // "Signaler" for others — no-op for now
-        },
-      );
-    } else {
-      // Android fallback
-      if (isOwn) {
-        Alert.alert("Options", undefined, [
-          { text: "Supprimer", style: "destructive", onPress: confirmDelete },
-          { text: "Annuler", style: "cancel" },
-        ]);
-      }
-    }
-  };
 
   const handleShare = async () => {
     const url = `https://garona.city/post/${post.id}`;
@@ -173,8 +135,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
             <IconButton
               name="ellipsis-horizontal"
               size={18}
-              onPress={handleMenu}
-              color={isOwn ? colors.text : colors.textMuted}
+              onPress={() => setMenuVisible(true)}
             />
           </View>
 
@@ -287,6 +248,12 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
           </View>
         </View>
       </View>
+      <PostMenuSheet
+        visible={menuVisible}
+        isOwn={isOwn}
+        onClose={() => setMenuVisible(false)}
+        onDelete={() => deleteMutation.mutate()}
+      />
     </View>
   );
 }
