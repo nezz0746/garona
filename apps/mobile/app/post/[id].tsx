@@ -1,24 +1,16 @@
 import { useState, useRef } from "react";
 import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  View, Text, Pressable, FlatList, Image, TextInput,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Share,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { colors } from "@garona/shared";
 import { Avatar, IconButton } from "@garona/ui";
-import { feedApi, postsApi } from "../../lib/api";
-import type { Comment } from "../../lib/api";
+import { feedApi, postsApi, type Reply } from "../../lib/api";
 import { queryKeys } from "../../lib/queryKeys";
-import { useCommentsQuery } from "../../hooks/queries/useCommentsQuery";
 import { useCommentMutation } from "../../hooks/mutations/useCommentMutation";
 import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 import { RichText } from "../../components/RichText";
@@ -41,6 +33,7 @@ export default function PostThreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+  const qc = useQueryClient();
   const [text, setText] = useState("");
   const [likesVisible, setLikesVisible] = useState(false);
 
@@ -50,9 +43,21 @@ export default function PostThreadScreen() {
     enabled: !!id,
   });
 
-  const { data: comments = [], isLoading: commentsLoading } = useCommentsQuery(id);
+  const { data: replies = [], isLoading: repliesLoading } = useQuery({
+    queryKey: ["replies", id],
+    queryFn: () => postsApi.replies(id),
+    enabled: !!id,
+  });
+
   const commentMutation = useCommentMutation(id);
-  const likeMutation = useLikeMutation();
+  const postLikeMutation = useLikeMutation();
+
+  const replyLikeMutation = useMutation({
+    mutationFn: (replyId: string) => postsApi.like(replyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["replies", id] });
+    },
+  });
 
   const { data: likedUsers = [], isLoading: likesLoading } = useQuery({
     queryKey: queryKeys.postLikes(id),
@@ -63,8 +68,19 @@ export default function PostThreadScreen() {
   const handleSend = () => {
     if (!text.trim() || commentMutation.isPending) return;
     commentMutation.mutate(text.trim(), {
-      onSuccess: () => setText(""),
+      onSuccess: () => {
+        setText("");
+        qc.invalidateQueries({ queryKey: ["replies", id] });
+        qc.invalidateQueries({ queryKey: queryKeys.post(id) });
+      },
     });
+  };
+
+  const handleShare = async () => {
+    const url = `https://garona.city/post/${id}`;
+    try {
+      await Share.share({ message: url, url });
+    } catch {}
   };
 
   if (postLoading) {
@@ -86,6 +102,12 @@ export default function PostThreadScreen() {
     );
   }
 
+  const postImages = post.imageUrls && post.imageUrls.length > 0
+    ? post.imageUrls
+    : post.imageUrl ? [post.imageUrl] : [];
+
+  const replyCount = post.replies ?? post.comments ?? 0;
+
   const renderHeader = () => (
     <View className="border-b border-border" style={{ borderBottomWidth: 0.5 }}>
       {/* Author row */}
@@ -102,9 +124,25 @@ export default function PostThreadScreen() {
 
       {/* Post body */}
       <View className="px-4 pt-3 pb-3">
-        <RichText className="text-text text-[17px] leading-[24px]">
-          {post.caption || ""}
-        </RichText>
+        {post.caption ? (
+          <RichText className="text-text text-[17px] leading-[24px]">
+            {post.caption}
+          </RichText>
+        ) : null}
+
+        {/* Images */}
+        {postImages.length > 0 && (
+          <View className="mt-3">
+            {postImages.map((uri, i) => (
+              <Image
+                key={uri}
+                source={{ uri }}
+                style={{ width: "100%", height: 300, borderRadius: 12, marginBottom: i < postImages.length - 1 ? 4 : 0 }}
+                resizeMode="cover"
+              />
+            ))}
+          </View>
+        )}
 
         {/* Link previews */}
         {post.linkPreviews && post.linkPreviews.length > 0 && (
@@ -118,22 +156,19 @@ export default function PostThreadScreen() {
         {/* Timestamp */}
         <Text className="text-text-muted text-[13px] mt-3">
           {new Date(post.createdAt).toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
+            day: "numeric", month: "long", year: "numeric",
           })}{" "}
           {new Date(post.createdAt).toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: "2-digit", minute: "2-digit",
           })}
         </Text>
       </View>
 
       {/* Engagement bar */}
       <View className="flex-row items-center px-4 py-2 border-t border-border gap-5" style={{ borderTopWidth: 0.5 }}>
-        <Pressable className="flex-row items-center gap-1" onPress={onOpenComments}>
-          <Text className="text-text font-bold text-[14px]">{post.comments}</Text>
-          <Text className="text-text-muted text-[14px]">commentaire{post.comments !== 1 ? "s" : ""}</Text>
+        <Pressable className="flex-row items-center gap-1" onPress={() => inputRef.current?.focus()}>
+          <Text className="text-text font-bold text-[14px]">{replyCount}</Text>
+          <Text className="text-text-muted text-[14px]">réponse{replyCount !== 1 ? "s" : ""}</Text>
         </Pressable>
         <Pressable className="flex-row items-center gap-1" onPress={() => setLikesVisible(true)}>
           <Text className="text-text font-bold text-[14px]">{post.likes}</Text>
@@ -143,48 +178,90 @@ export default function PostThreadScreen() {
 
       {/* Action buttons */}
       <View className="flex-row items-center justify-around px-4 py-1.5 border-t border-border" style={{ borderTopWidth: 0.5 }}>
-        <IconButton name="chatbubble-outline" size={20} onPress={onOpenComments} />
+        <IconButton name="chatbubble-outline" size={20} onPress={() => inputRef.current?.focus()} />
         <IconButton
           name={post.liked ? "heart" : "heart-outline"}
           size={20}
           color={post.liked ? colors.like : colors.textMuted}
-          onPress={() => likeMutation.mutate(post.id)}
+          onPress={() => postLikeMutation.mutate(post.id)}
         />
-        <IconButton name="share-outline" size={20} />
+        <IconButton name="share-outline" size={20} onPress={handleShare} />
       </View>
 
-      {/* Comments header */}
-      {comments.length > 0 && (
+      {/* Replies header */}
+      {replies.length > 0 && (
         <View className="px-4 pt-3 pb-1">
-          <Text className="text-text-muted text-[13px] font-semibold">Commentaires</Text>
+          <Text className="text-text-muted text-[13px] font-semibold">Réponses</Text>
         </View>
       )}
     </View>
   );
 
-  const onOpenComments = () => {
-    inputRef.current?.focus();
-  };
+  const renderReply = ({ item }: { item: Reply }) => {
+    const images = item.imageUrls && item.imageUrls.length > 0
+      ? item.imageUrls
+      : item.imageUrl ? [item.imageUrl] : [];
 
-  const renderComment = ({ item }: { item: Comment }) => (
-    <View className="flex-row px-4 py-3 gap-3 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-      <Pressable onPress={() => router.push(`/user/${item.author.username}`)}>
-        <Avatar uri={item.author.avatarUrl} name={item.author.username} size={36} />
-      </Pressable>
-      <View className="flex-1">
-        <View className="flex-row items-center gap-1.5">
-          <Pressable onPress={() => router.push(`/user/${item.author.username}`)}>
-            <Text className="text-text font-bold text-[14px]">{item.author.name}</Text>
-          </Pressable>
-          <Text className="text-text-muted text-[13px]">@{item.author.username}</Text>
-          <Text className="text-text-muted text-[13px]">· {timeAgo(item.createdAt)}</Text>
+    return (
+      <View className="flex-row px-4 py-3 gap-3 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+        <Pressable onPress={() => router.push(`/user/${item.author.username}`)}>
+          <Avatar uri={item.author.avatarUrl} name={item.author.username} size={36} />
+        </Pressable>
+        <View className="flex-1">
+          <View className="flex-row items-center gap-1.5">
+            <Pressable onPress={() => router.push(`/user/${item.author.username}`)}>
+              <Text className="text-text font-bold text-[14px]">{item.author.name}</Text>
+            </Pressable>
+            <Text className="text-text-muted text-[13px]">@{item.author.username}</Text>
+            <Text className="text-text-muted text-[13px]">· {timeAgo(item.createdAt)}</Text>
+          </View>
+
+          {item.caption ? (
+            <RichText className="text-text text-[15px] leading-[21px] mt-0.5">
+              {item.caption}
+            </RichText>
+          ) : null}
+
+          {/* Images in reply */}
+          {images.length > 0 && (
+            <View className="mt-2">
+              <Image
+                source={{ uri: images[0] }}
+                style={{ width: "100%", height: 180, borderRadius: 10 }}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+
+          {/* Engagement row */}
+          <View className="flex-row items-center mt-2 gap-5">
+            <Pressable
+              className="flex-row items-center gap-1"
+              onPress={() => replyLikeMutation.mutate(item.id)}
+            >
+              <Ionicons
+                name={item.liked ? "heart" : "heart-outline"}
+                size={16}
+                color={item.liked ? colors.like : colors.textMuted}
+              />
+              {item.likes > 0 && (
+                <Text className="text-text-muted text-[13px]">{item.likes}</Text>
+              )}
+            </Pressable>
+            {item.replies > 0 && (
+              <Pressable
+                className="flex-row items-center gap-1"
+                onPress={() => router.push(`/post/${item.id}`)}
+              >
+                <Ionicons name="chatbubble-outline" size={15} color={colors.textMuted} />
+                <Text className="text-text-muted text-[13px]">{item.replies}</Text>
+              </Pressable>
+            )}
+          </View>
         </View>
-        <RichText className="text-text text-[15px] leading-[21px] mt-0.5">
-          {item.text}
-        </RichText>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -193,7 +270,7 @@ export default function PostThreadScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={0}
     >
-      {/* Header */}
+      {/* Nav header */}
       <View className="flex-row items-center justify-between px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
         <Pressable onPress={() => router.back()} className="p-1">
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -202,32 +279,32 @@ export default function PostThreadScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      {/* Post + comments */}
+      {/* Post + replies */}
       <FlatList
-        data={comments}
-        keyExtractor={(c) => c.id}
+        data={replies}
+        keyExtractor={(r) => r.id}
         ListHeaderComponent={renderHeader}
-        renderItem={renderComment}
+        renderItem={renderReply}
         ListEmptyComponent={() =>
-          commentsLoading ? (
+          repliesLoading ? (
             <View className="py-8 items-center">
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : (
             <View className="py-[40px] items-center gap-2">
-              <Text className="text-text-muted text-[14px]">Aucun commentaire</Text>
+              <Text className="text-text-muted text-[14px]">Aucune réponse</Text>
               <Text className="text-text-muted text-[13px]">Sois le premier !</Text>
             </View>
           )
         }
       />
 
-      {/* Comment input */}
+      {/* Reply input */}
       <View className="flex-row items-center px-4 py-2.5 border-t border-border gap-2.5" style={{ borderTopWidth: 0.5, paddingBottom: insets.bottom + 10 }}>
         <MentionTextInput
           inputRef={inputRef}
           className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
-          placeholder="Ajouter un commentaire..."
+          placeholder="Répondre..."
           placeholderTextColor={colors.textMuted}
           value={text}
           onChangeText={setText}

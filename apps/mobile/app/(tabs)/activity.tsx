@@ -38,6 +38,7 @@ function NotifRow({ item }: { item: ActivityItem }) {
           {item.type === "like" && " a aimé ta publication."}
           {item.type === "follow" && " s'est abonné(e)."}
           {item.type === "comment" && ` a commenté : "${item.text}"`}
+          {item.type === "reply" && ` a répondu : "${item.text}"`}
           <Text className="text-text-muted"> {timeAgo(item.createdAt)}</Text>
         </Text>
       </View>

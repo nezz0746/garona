@@ -156,7 +156,7 @@ export const profilesApi = {
 // ─── Activity ───
 export type ActivityItem = {
   id: string;
-  type: "like" | "comment" | "follow";
+  type: "like" | "comment" | "reply" | "follow";
   actor: { id: string; username: string; name: string; avatarUrl: string | null };
   text?: string;
   postId?: string;
