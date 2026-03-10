@@ -1,7 +1,7 @@
 "use server";
 
 import { db, users, posts, postImages, vouches, computeRang, vouchWeight, ROOT_USERNAME } from "@garona/db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 
@@ -213,4 +213,72 @@ export async function revokeRootVouch(userId: string) {
 
   revalidatePath("/");
   return { success: true };
+}
+
+export async function runCommentsMigration() {
+  // Check if comments table still exists
+  const tableCheck = await db.execute(
+    sql`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'comments') as exists`
+  );
+  const commentsExist = (tableCheck.rows[0] as any)?.exists;
+
+  if (!commentsExist) {
+    const [replyStats] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(posts)
+      .where(isNotNull(posts.parentId));
+
+    const [topLevel] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(posts)
+      .where(sql`${posts.parentId} IS NULL`);
+
+    return {
+      success: true,
+      alreadyDone: true,
+      message: `Migration déjà effectuée. ${Number(topLevel.count)} posts, ${Number(replyStats.count)} réponses.`,
+    };
+  }
+
+  // 1. Add columns (idempotent)
+  await db.execute(sql`ALTER TABLE "posts" ADD COLUMN IF NOT EXISTS "parent_id" uuid`);
+  await db.execute(sql`ALTER TABLE "posts" ADD COLUMN IF NOT EXISTS "reply_count" integer NOT NULL DEFAULT 0`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS "posts_parent_idx" ON "posts" ("parent_id")`);
+
+  // 2. Backup
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS "_comments_backup" AS SELECT * FROM "comments"`);
+
+  // 3. Count comments to migrate
+  const [commentCount] = await db.execute(sql`SELECT count(*) as count FROM "comments"`);
+  const totalComments = Number((commentCount as any).count);
+
+  // 4. Migrate comments → posts with parentId
+  await db.execute(sql`
+    INSERT INTO "posts" ("id", "author_id", "parent_id", "caption", "image_count", "created_at")
+    SELECT c."id", c."author_id", c."post_id", c."text", 0, c."created_at"
+    FROM "comments" c
+    ON CONFLICT ("id") DO NOTHING
+  `);
+
+  // 5. Recompute reply counts
+  await db.execute(sql`
+    UPDATE "posts" p
+    SET "reply_count" = COALESCE(sub.cnt, 0)
+    FROM (
+      SELECT "parent_id", count(*)::int AS cnt
+      FROM "posts"
+      WHERE "parent_id" IS NOT NULL
+      GROUP BY "parent_id"
+    ) sub
+    WHERE p."id" = sub."parent_id"
+  `);
+
+  // 6. Drop comments table
+  await db.execute(sql`DROP TABLE IF EXISTS "comments"`);
+
+  return {
+    success: true,
+    alreadyDone: false,
+    message: `Migration terminée ! ${totalComments} commentaires convertis en réponses. Table "comments" supprimée (backup dans "_comments_backup").`,
+  };
 }

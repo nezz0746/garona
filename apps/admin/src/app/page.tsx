@@ -7,6 +7,7 @@ import {
 import { eq, and, sql } from "drizzle-orm";
 import { CreatePostForm } from "./components/CreatePostForm";
 import { LogoutButton } from "./components/LogoutButton";
+import { MigrationButton } from "./components/MigrationButton";
 import { RootAccountSection } from "./components/RootAccountSection";
 import { UserList } from "./components/UserList";
 import { getUsers } from "./actions";
@@ -74,6 +75,14 @@ export default async function Home() {
 
         {/* Create Post (only if root account exists) */}
         {rootUser && <CreatePostForm rootUserId={rootUser.id} />}
+
+        {/* Migrations */}
+        <section className="mb-12">
+          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            Migrations
+          </h2>
+          <MigrationButton />
+        </section>
 
         {/* Docs Link */}
         <section className="mb-12">
