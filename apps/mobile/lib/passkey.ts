@@ -17,9 +17,9 @@ export async function isPasskeySupported(): Promise<boolean> {
 /**
  * Register a passkey for the currently authenticated user.
  */
-export async function registerPasskey(name?: string): Promise<boolean> {
+export async function registerPasskey(username?: string): Promise<boolean> {
   try {
-    const result = await client.passkey.addPasskey({ name: name || "Garona" });
+    const result = await client.passkey.addPasskey({ name: username || "Garona" });
     return !!result.data;
   } catch (e) {
     console.log("Passkey registration failed:", e);

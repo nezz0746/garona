@@ -112,7 +112,7 @@ export function SignupForm({ onSignedUp, onBack }: Props) {
 
       // Step 3: Register a passkey for the new account
       try {
-        await registerPasskey();
+        await registerPasskey(username.trim());
       } catch (e) {
         // Non-blocking — account is created, passkey can be added later
         console.log("Passkey registration skipped:", e);
