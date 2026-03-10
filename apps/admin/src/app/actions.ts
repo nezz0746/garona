@@ -220,7 +220,7 @@ export async function runCommentsMigration() {
   const tableCheck = await db.execute(
     sql`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'comments') as exists`
   );
-  const commentsExist = (tableCheck.rows[0] as any)?.exists;
+  const commentsExist = (tableCheck as any)[0]?.exists;
 
   if (!commentsExist) {
     const [replyStats] = await db
@@ -249,8 +249,8 @@ export async function runCommentsMigration() {
   await db.execute(sql`CREATE TABLE IF NOT EXISTS "_comments_backup" AS SELECT * FROM "comments"`);
 
   // 3. Count comments to migrate
-  const [commentCount] = await db.execute(sql`SELECT count(*) as count FROM "comments"`);
-  const totalComments = Number((commentCount as any).count);
+  const commentCountResult = await db.execute(sql`SELECT count(*) as count FROM "comments"`);
+  const totalComments = Number((commentCountResult as any)[0]?.count ?? 0);
 
   // 4. Migrate comments → posts with parentId
   await db.execute(sql`
