@@ -3,6 +3,7 @@ import { Avatar, IconButton } from "@garona/ui";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -10,11 +11,15 @@ import {
   type NativeSyntheticEvent,
   Image,
   Pressable,
+  Share,
   Text,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { FeedPost } from "../lib/api";
+import { postsApi } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { LinkPreviewCard } from "./LinkPreviewCard";
 import { RichText } from "./RichText";
 
@@ -45,6 +50,47 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
   const lastTap = useRef(0);
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  const isOwn = user?.id === post.authorId;
+
+  const deleteMutation = useMutation({
+    mutationFn: () => postsApi.delete(post.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["profilePosts"] });
+    },
+  });
+
+  const handleMenu = () => {
+    if (isOwn) {
+      Alert.alert(
+        "Supprimer la publication",
+        "Es-tu sûr de vouloir supprimer cette publication ?",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: () => deleteMutation.mutate(),
+          },
+        ],
+      );
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `https://garona.city/post/${post.id}`;
+    const message = post.caption
+      ? `${post.caption.slice(0, 100)}${post.caption.length > 100 ? "…" : ""}\n\n${url}`
+      : url;
+    try {
+      await Share.share({ message, url });
+    } catch (_) {
+      // user cancelled
+    }
+  };
 
   const images =
     post.imageUrls && post.imageUrls.length > 0
@@ -102,7 +148,12 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
                 · {timeAgo(post.createdAt)}
               </Text>
             </Pressable>
-            <IconButton name="ellipsis-horizontal" size={18} />
+            <IconButton
+              name="ellipsis-horizontal"
+              size={18}
+              onPress={handleMenu}
+              color={isOwn ? colors.text : colors.textMuted}
+            />
           </View>
 
           {/* Body */}
@@ -209,7 +260,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
               </Pressable>
             </View>
             <View className="flex-row items-center">
-              <IconButton name="share-outline" size={18} />
+              <IconButton name="share-outline" size={18} onPress={handleShare} />
             </View>
           </View>
         </View>
