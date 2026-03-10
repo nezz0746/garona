@@ -3,6 +3,7 @@ import { Avatar, IconButton } from "@garona/ui";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
+  ActionSheetIOS,
   Alert,
   Animated,
   Dimensions,
@@ -10,6 +11,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Image,
+  Platform,
   Pressable,
   Share,
   Text,
@@ -63,20 +65,40 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
     },
   });
 
+  const confirmDelete = () => {
+    Alert.alert(
+      "Supprimer la publication",
+      "Es-tu sûr de vouloir supprimer cette publication ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Supprimer", style: "destructive", onPress: () => deleteMutation.mutate() },
+      ],
+    );
+  };
+
   const handleMenu = () => {
-    if (isOwn) {
-      Alert.alert(
-        "Supprimer la publication",
-        "Es-tu sûr de vouloir supprimer cette publication ?",
-        [
-          { text: "Annuler", style: "cancel" },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: () => deleteMutation.mutate(),
-          },
-        ],
+    const ownOptions = ["Supprimer", "Annuler"];
+    const otherOptions = ["Signaler", "Annuler"];
+    const options = isOwn ? ownOptions : otherOptions;
+    const destructiveIndex = 0;
+    const cancelIndex = options.length - 1;
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, destructiveButtonIndex: destructiveIndex, cancelButtonIndex: cancelIndex },
+        (index) => {
+          if (isOwn && index === 0) confirmDelete();
+          // "Signaler" for others — no-op for now
+        },
       );
+    } else {
+      // Android fallback
+      if (isOwn) {
+        Alert.alert("Options", undefined, [
+          { text: "Supprimer", style: "destructive", onPress: confirmDelete },
+          { text: "Annuler", style: "cancel" },
+        ]);
+      }
     }
   };
 
