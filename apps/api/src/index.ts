@@ -24,7 +24,21 @@ app.use("*", cors({
 }));
 
 // BetterAuth handler
-app.on(["POST", "GET"], "/api/auth/*", (c) => {
+app.on(["POST", "GET"], "/api/auth/*", async (c) => {
+  // Debug passkey origin
+  if (c.req.path.includes("verify-authentication") || c.req.path.includes("verify-registration")) {
+    const origin = c.req.header("origin");
+    const body = await c.req.raw.clone().json().catch(() => null);
+    const clientData = body?.response?.response?.clientDataJSON;
+    if (clientData) {
+      try {
+        const decoded = JSON.parse(Buffer.from(clientData, "base64url").toString());
+        console.log("[passkey-debug] clientDataJSON origin:", decoded.origin);
+      } catch {}
+    }
+    console.log("[passkey-debug] HTTP Origin header:", origin || "MISSING");
+    console.log("[passkey-debug] PASSKEY_ORIGIN env:", process.env.PASSKEY_ORIGIN);
+  }
   return auth.handler(c.req.raw);
 });
 

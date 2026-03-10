@@ -1,5 +1,8 @@
 import { Platform } from "react-native";
-import { API_URL } from "./auth";
+import { authClient } from "./auth-client";
+
+// expo-better-auth-passkey registers these at runtime but types don't propagate
+const client = authClient as any;
 
 /**
  * Check if passkeys are supported on the current platform.
@@ -8,44 +11,16 @@ export async function isPasskeySupported(): Promise<boolean> {
   if (Platform.OS === "web") {
     return typeof window !== "undefined" && !!window.PublicKeyCredential;
   }
-  try {
-    const { Passkey } = await import("react-native-passkey");
-    return Passkey.isSupported();
-  } catch {
-    return false;
-  }
+  return true;
 }
 
 /**
  * Register a passkey for the currently authenticated user.
- * 1. Get registration options from server
- * 2. Native passkey ceremony via react-native-passkey
- * 3. Send result back to server for verification
  */
-export async function registerPasskey(): Promise<boolean> {
+export async function registerPasskey(name?: string): Promise<boolean> {
   try {
-    const { Passkey } = await import("react-native-passkey");
-
-    // 1. Get registration options
-    const optionsRes = await fetch(`${API_URL}/api/auth/passkey/generate-register-options`, {
-      method: "GET",
-      credentials: "include",
-    });
-    if (!optionsRes.ok) return false;
-    const options = await optionsRes.json();
-
-    // 2. Native ceremony
-    const result = await Passkey.register(options);
-
-    // 3. Verify with server
-    const verifyRes = await fetch(`${API_URL}/api/auth/passkey/verify-registration`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ response: result }),
-    });
-
-    return verifyRes.ok;
+    const result = await client.passkey.addPasskey({ name: name || "Garona" });
+    return !!result.data;
   } catch (e) {
     console.log("Passkey registration failed:", e);
     return false;
@@ -53,43 +28,24 @@ export async function registerPasskey(): Promise<boolean> {
 }
 
 /**
- * Sign in with a passkey (native flow).
- * 1. Get authentication options (challenge) from server
- * 2. Native passkey ceremony — iOS shows passkey picker
- * 3. Send assertion to server for verification
- * 4. Server returns session
+ * Sign in with a passkey.
  */
 export async function signInWithPasskey(): Promise<{ id: string; name: string } | null> {
-  const { Passkey } = await import("react-native-passkey");
+  const result = await client.signIn.passkey();
 
-  // 1. Get authentication options
-  const optionsRes = await fetch(`${API_URL}/api/auth/passkey/generate-authenticate-options`, {
-    method: "GET",
-    credentials: "include",
-  });
-  if (!optionsRes.ok) {
-    throw new Error("Impossible de contacter le serveur");
-  }
-  const options = await optionsRes.json();
-
-  // 2. Native passkey ceremony — iOS shows the passkey picker
-  const assertion = await Passkey.authenticate(options);
-
-  // 3. Verify with server
-  const verifyRes = await fetch(`${API_URL}/api/auth/passkey/verify-authentication`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ response: assertion }),
-  });
-
-  if (!verifyRes.ok) {
-    const err = await verifyRes.json().catch(() => ({}));
-    throw new Error(err.message || "Vérification échouée");
+  if (result.error) {
+    if (result.error.code === "AUTH_CANCELLED") {
+      return null;
+    }
+    throw new Error(result.error.message || "Authentification échouée");
   }
 
-  const data = await verifyRes.json();
-  if (!data?.session) return null;
+  if (result.data?.session) {
+    return {
+      id: result.data.session.userId,
+      name: result.data.user?.name || "",
+    };
+  }
 
-  return { id: data.session.userId, name: data.user?.name || "" };
+  return null;
 }

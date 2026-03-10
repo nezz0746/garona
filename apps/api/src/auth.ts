@@ -54,7 +54,9 @@ export const auth = betterAuth({
     passkey({
       rpID: process.env.PASSKEY_RP_ID || "localhost",
       rpName: "Garona",
-      origin: process.env.PASSKEY_ORIGIN || "http://localhost:8081",
+      origin: process.env.PASSKEY_ORIGIN
+        ? process.env.PASSKEY_ORIGIN.split(",")
+        : ["http://localhost:8081", "http://localhost:19006"],
     }),
   ],
   trustedOrigins: [
