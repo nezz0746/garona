@@ -149,7 +149,7 @@ export default function CreateScreen() {
     >
       {/* Header */}
       <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-        <Pressable onPress={() => { setSelected([]); setCaption(""); setShowGallery(false); }}>
+        <Pressable onPress={() => { setSelected([]); setCaption(""); setShowGallery(false); router.navigate("/(tabs)"); }}>
           <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
         <Text className="text-lg font-bold text-text">Publier</Text>

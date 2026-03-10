@@ -11,7 +11,6 @@ import { colors } from "@garona/shared";
 import { Avatar, IconButton } from "@garona/ui";
 import { feedApi, postsApi, type Reply } from "../../lib/api";
 import { queryKeys } from "../../lib/queryKeys";
-import { useCommentMutation } from "../../hooks/mutations/useCommentMutation";
 import { useLikeMutation } from "../../hooks/mutations/useLikeMutation";
 import { RichText } from "../../components/RichText";
 import { MentionTextInput } from "../../components/MentionTextInput";
@@ -36,6 +35,7 @@ export default function PostThreadScreen() {
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [likesVisible, setLikesVisible] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
 
   const { data: post, isLoading: postLoading } = useQuery({
     queryKey: queryKeys.post(id),
@@ -49,7 +49,6 @@ export default function PostThreadScreen() {
     enabled: !!id,
   });
 
-  const commentMutation = useCommentMutation(id);
   const postLikeMutation = useLikeMutation();
 
   const replyLikeMutation = useMutation({
@@ -65,15 +64,27 @@ export default function PostThreadScreen() {
     enabled: likesVisible && !!id,
   });
 
+  const replyMutation = useMutation({
+    mutationFn: ({ parentId, text }: { parentId: string; text: string }) =>
+      postsApi.reply(parentId, text),
+    onSuccess: () => {
+      setText("");
+      setReplyingTo(null);
+      qc.invalidateQueries({ queryKey: ["replies", id] });
+      qc.invalidateQueries({ queryKey: queryKeys.post(id) });
+    },
+  });
+
   const handleSend = () => {
-    if (!text.trim() || commentMutation.isPending) return;
-    commentMutation.mutate(text.trim(), {
-      onSuccess: () => {
-        setText("");
-        qc.invalidateQueries({ queryKey: ["replies", id] });
-        qc.invalidateQueries({ queryKey: queryKeys.post(id) });
-      },
-    });
+    if (!text.trim()) return;
+    const targetId = replyingTo?.id || id;
+    replyMutation.mutate({ parentId: targetId, text: text.trim() });
+  };
+
+  const handleReplyTo = (reply: Reply) => {
+    setReplyingTo({ id: reply.id, username: reply.author.username });
+    setText(`@${reply.author.username} `);
+    inputRef.current?.focus();
   };
 
   const handleShare = async () => {
@@ -237,6 +248,15 @@ export default function PostThreadScreen() {
           <View className="flex-row items-center mt-2 gap-5">
             <Pressable
               className="flex-row items-center gap-1"
+              onPress={() => handleReplyTo(item)}
+            >
+              <Ionicons name="chatbubble-outline" size={15} color={colors.textMuted} />
+              {item.replies > 0 && (
+                <Text className="text-text-muted text-[13px]">{item.replies}</Text>
+              )}
+            </Pressable>
+            <Pressable
+              className="flex-row items-center gap-1"
               onPress={() => replyLikeMutation.mutate(item.id)}
             >
               <Ionicons
@@ -248,15 +268,6 @@ export default function PostThreadScreen() {
                 <Text className="text-text-muted text-[13px]">{item.likes}</Text>
               )}
             </Pressable>
-            {item.replies > 0 && (
-              <Pressable
-                className="flex-row items-center gap-1"
-                onPress={() => router.push(`/post/${item.id}`)}
-              >
-                <Ionicons name="chatbubble-outline" size={15} color={colors.textMuted} />
-                <Text className="text-text-muted text-[13px]">{item.replies}</Text>
-              </Pressable>
-            )}
           </View>
         </View>
       </View>
@@ -300,29 +311,41 @@ export default function PostThreadScreen() {
       />
 
       {/* Reply input */}
-      <View className="flex-row items-center px-4 py-2.5 border-t border-border gap-2.5" style={{ borderTopWidth: 0.5, paddingBottom: insets.bottom + 10 }}>
-        <MentionTextInput
-          inputRef={inputRef}
-          className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
-          placeholder="Répondre..."
-          placeholderTextColor={colors.textMuted}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={300}
-        />
-        <Pressable
-          onPress={handleSend}
-          disabled={!text.trim() || commentMutation.isPending}
-          className="p-2"
-          style={(!text.trim() || commentMutation.isPending) ? { opacity: 0.4 } : undefined}
-        >
-          {commentMutation.isPending ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Ionicons name="send" size={20} color={colors.primary} />
-          )}
-        </Pressable>
+      <View style={{ borderTopWidth: 0.5 }} className="border-t border-border">
+        {replyingTo && (
+          <View className="flex-row items-center px-4 py-1.5 bg-surface gap-2">
+            <Text className="text-text-muted text-[12px] flex-1">
+              Réponse à <Text className="font-semibold text-text">@{replyingTo.username}</Text>
+            </Text>
+            <Pressable onPress={() => { setReplyingTo(null); setText(""); }}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </Pressable>
+          </View>
+        )}
+        <View className="flex-row items-center px-4 py-2.5 gap-2.5" style={{ paddingBottom: insets.bottom + 10 }}>
+          <MentionTextInput
+            inputRef={inputRef}
+            className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
+            placeholder={replyingTo ? `Répondre à @${replyingTo.username}...` : "Répondre..."}
+            placeholderTextColor={colors.textMuted}
+            value={text}
+            onChangeText={setText}
+            multiline
+            maxLength={300}
+          />
+          <Pressable
+            onPress={handleSend}
+            disabled={!text.trim() || replyMutation.isPending}
+            className="p-2"
+            style={(!text.trim() || replyMutation.isPending) ? { opacity: 0.4 } : undefined}
+          >
+            {replyMutation.isPending ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Ionicons name="send" size={20} color={colors.primary} />
+            )}
+          </Pressable>
+        </View>
       </View>
 
       <UsersListSheet

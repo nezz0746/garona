@@ -10,7 +10,6 @@ import { Avatar, IconButton } from "@garona/ui";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { postsApi, type Reply } from "../lib/api";
 import { queryKeys } from "../lib/queryKeys";
-import { useCommentMutation } from "../hooks/mutations/useCommentMutation";
 import { MentionTextInput } from "./MentionTextInput";
 import { RichText } from "./RichText";
 
@@ -38,8 +37,8 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
     queryFn: () => postsApi.replies(postId!),
     enabled: visible && !!postId,
   });
-  const commentMutation = useCommentMutation(postId || "");
   const [text, setText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   const likeMutation = useMutation({
@@ -49,14 +48,27 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
     },
   });
 
+  const replyMutation = useMutation({
+    mutationFn: ({ parentId, text }: { parentId: string; text: string }) =>
+      postsApi.reply(parentId, text),
+    onSuccess: () => {
+      setText("");
+      setReplyingTo(null);
+      qc.invalidateQueries({ queryKey: ["replies", postId] });
+      qc.invalidateQueries({ queryKey: ["feed"] });
+    },
+  });
+
   const handleSend = () => {
-    if (!text.trim() || !postId || commentMutation.isPending) return;
-    commentMutation.mutate(text.trim(), {
-      onSuccess: () => {
-        setText("");
-        qc.invalidateQueries({ queryKey: ["replies", postId] });
-      },
-    });
+    if (!text.trim() || !postId || replyMutation.isPending) return;
+    const targetId = replyingTo?.id || postId;
+    replyMutation.mutate({ parentId: targetId, text: text.trim() });
+  };
+
+  const handleReplyTo = (reply: Reply) => {
+    setReplyingTo({ id: reply.id, username: reply.author.username });
+    setText(`@${reply.author.username} `);
+    inputRef.current?.focus();
   };
 
   const renderReply = ({ item }: { item: Reply }) => {
@@ -99,6 +111,15 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
           <View className="flex-row items-center mt-1.5 gap-4">
             <Pressable
               className="flex-row items-center gap-1"
+              onPress={() => handleReplyTo(item)}
+            >
+              <Ionicons name="chatbubble-outline" size={14} color={colors.textMuted} />
+              {item.replies > 0 && (
+                <Text className="text-text-muted text-[12px]">{item.replies}</Text>
+              )}
+            </Pressable>
+            <Pressable
+              className="flex-row items-center gap-1"
               onPress={() => likeMutation.mutate(item.id)}
             >
               <Ionicons
@@ -110,12 +131,6 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
                 <Text className="text-text-muted text-[12px]">{item.likes}</Text>
               )}
             </Pressable>
-            {item.replies > 0 && (
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="chatbubble-outline" size={14} color={colors.textMuted} />
-                <Text className="text-text-muted text-[12px]">{item.replies}</Text>
-              </View>
-            )}
           </View>
         </View>
       </View>
@@ -156,29 +171,41 @@ export function CommentsSheet({ postId, visible, onClose }: Props) {
         )}
 
         {/* Input */}
-        <View className="flex-row items-center px-4 py-2.5 border-t border-border pb-[30px] gap-2.5" style={{ borderTopWidth: 0.5 }}>
-          <MentionTextInput
-            inputRef={inputRef}
-            className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
-            placeholder="Répondre..."
-            placeholderTextColor={colors.textMuted}
-            value={text}
-            onChangeText={setText}
-            multiline
-            maxLength={300}
-          />
-          <Pressable
-            onPress={handleSend}
-            disabled={!text.trim() || commentMutation.isPending}
-            className="p-2"
-            style={(!text.trim() || commentMutation.isPending) ? { opacity: 0.4 } : undefined}
-          >
-            {commentMutation.isPending ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Ionicons name="send" size={20} color={colors.primary} />
-            )}
-          </Pressable>
+        <View className="border-t border-border" style={{ borderTopWidth: 0.5 }}>
+          {replyingTo && (
+            <View className="flex-row items-center px-4 py-1.5 bg-surface gap-2">
+              <Text className="text-text-muted text-[12px] flex-1">
+                Réponse à <Text className="font-semibold text-text">@{replyingTo.username}</Text>
+              </Text>
+              <Pressable onPress={() => { setReplyingTo(null); setText(""); }}>
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          )}
+          <View className="flex-row items-center px-4 py-2.5 pb-[30px] gap-2.5">
+            <MentionTextInput
+              inputRef={inputRef}
+              className="flex-1 bg-surface rounded-[20px] px-4 py-2.5 text-sm text-text max-h-[80px]"
+              placeholder={replyingTo ? `Répondre à @${replyingTo.username}...` : "Répondre..."}
+              placeholderTextColor={colors.textMuted}
+              value={text}
+              onChangeText={setText}
+              multiline
+              maxLength={300}
+            />
+            <Pressable
+              onPress={handleSend}
+              disabled={!text.trim() || replyMutation.isPending}
+              className="p-2"
+              style={(!text.trim() || replyMutation.isPending) ? { opacity: 0.4 } : undefined}
+            >
+              {replyMutation.isPending ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="send" size={20} color={colors.primary} />
+              )}
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
