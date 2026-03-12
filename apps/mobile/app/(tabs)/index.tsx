@@ -45,7 +45,7 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
       <View
-        className="flex-row justify-between items-center px-4 py-2"
+        className="flex-row justify-between items-center px-4 py-2.5"
       >
         <View className="flex-row items-baseline gap-2">
           <BrandText className="text-2xl text-accent tracking-tight">
@@ -61,11 +61,11 @@ export default function HomeScreen() {
       {/* Feed tabs */}
       <View className="flex-row border-b border-border" style={{ borderBottomWidth: 0.5 }}>
         <Pressable
-          className="flex-1 items-center py-2.5"
+          className="flex-1 items-center py-3"
           onPress={() => setActiveTab("discover")}
         >
           <Text
-            className={`text-[13px] font-semibold ${activeTab === "discover" ? "text-text" : "text-text-muted"}`}
+            className={`text-[14px] font-semibold ${activeTab === "discover" ? "text-text" : "text-text-muted"}`}
           >
             Explorer
           </Text>
@@ -74,11 +74,11 @@ export default function HomeScreen() {
           )}
         </Pressable>
         <Pressable
-          className="flex-1 items-center py-2.5"
+          className="flex-1 items-center py-3"
           onPress={() => setActiveTab("following")}
         >
           <Text
-            className={`text-[13px] font-semibold ${activeTab === "following" ? "text-text" : "text-text-muted"}`}
+            className={`text-[14px] font-semibold ${activeTab === "following" ? "text-text" : "text-text-muted"}`}
           >
             Abonnements
           </Text>
@@ -101,7 +101,7 @@ export default function HomeScreen() {
         )}
         ListEmptyComponent={() =>
           !isLoading ? (
-            <View className="p-10 items-center gap-2">
+            <View className="py-16 px-8 items-center gap-2">
               {error ? (
                 <>
                   <Text className="text-base font-semibold text-text">

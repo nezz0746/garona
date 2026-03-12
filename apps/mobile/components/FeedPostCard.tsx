@@ -24,7 +24,7 @@ import { PostMenuSheet } from "./PostMenuSheet";
 import { RichText } from "./RichText";
 
 const MAX_WIDTH = Math.min(Dimensions.get("window").width, 600);
-const IMAGE_WIDTH = MAX_WIDTH - 14 - 40 - 12 - 14; // px-3.5 + avatar + ml-3 + px-3.5
+const IMAGE_WIDTH = MAX_WIDTH - 16 - 40 - 12 - 16; // px-4 + avatar + ml-3 + px-4
 
 type Props = {
   post: FeedPost;
@@ -107,7 +107,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
 
   return (
     <View className="border-b border-border" style={{ borderBottomWidth: 0.5 }}>
-      <View className="flex-row px-3.5 pt-3 pb-2.5">
+      <View className="flex-row px-4 pt-3 pb-3">
         <Pressable onPress={() => router.push(`/user/${post.author.username}`)}>
           <Avatar
             uri={post.author.avatarUrl}
@@ -152,7 +152,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
 
             {/* Images */}
             {hasImages && (
-              <Pressable onPress={handleDoubleTap} style={{ marginTop: 8 }}>
+              <Pressable onPress={handleDoubleTap} className="mt-2.5">
                 {isCarousel ? (
                   <View style={{ borderRadius: 12, overflow: "hidden" }}>
                     <FlatList
@@ -216,7 +216,7 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
 
             {/* Link previews */}
             {post.linkPreviews && post.linkPreviews.length > 0 && (
-              <View style={{ marginTop: 8 }}>
+              <View className="mt-2.5">
                 {post.linkPreviews.map((lp) => (
                   <LinkPreviewCard key={lp.url} preview={lp} />
                 ))}
@@ -225,29 +225,28 @@ export function FeedPostCard({ post, onLike, onOpenComments, onOpenLikes }: Prop
           </Pressable>
 
           {/* Engagement row */}
-          <View className="flex-row items-center mt-2.5 -ml-2">
-            <View className="flex-row items-center flex-1">
-              <IconButton name="chatbubble-outline" size={18} onPress={() => router.push(`/post/${post.id}`)} />
-              <Text className="text-text-muted text-[13px] ml-0.5">
+          <View className="flex-row items-center mt-3 gap-1">
+            <Pressable className="flex-row items-center gap-1.5 py-1 pr-4" onPress={() => router.push(`/post/${post.id}`)}>
+              <Ionicons name="chatbubble-outline" size={18} color={colors.textMuted} />
+              <Text className="text-text-muted text-[13px]">
                 {post.comments || ""}
               </Text>
-            </View>
-            <View className="flex-row items-center flex-1">
-              <IconButton
+            </Pressable>
+            <Pressable className="flex-row items-center gap-1.5 py-1 pr-4" onPress={onLike}>
+              <Ionicons
                 name={post.liked ? "heart" : "heart-outline"}
                 size={18}
                 color={post.liked ? colors.like : colors.textMuted}
-                onPress={onLike}
               />
               <Pressable onPress={onOpenLikes}>
-                <Text className="text-text-muted text-[13px] ml-0.5">
+                <Text className="text-text-muted text-[13px]">
                   {post.likes || ""}
                 </Text>
               </Pressable>
-            </View>
-            <View className="flex-row items-center">
-              <IconButton name="share-outline" size={18} onPress={handleShare} />
-            </View>
+            </Pressable>
+            <Pressable className="flex-row items-center py-1" onPress={handleShare}>
+              <Ionicons name="share-outline" size={18} color={colors.textMuted} />
+            </Pressable>
           </View>
         </View>
       </View>

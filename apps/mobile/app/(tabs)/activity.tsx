@@ -31,7 +31,7 @@ function NotifRow({ item }: { item: ActivityItem }) {
 
   return (
     <Pressable className="flex-row items-center gap-3 px-4 py-3" onPress={() => router.push(`/user/${item.actor.username}`)}>
-      <Avatar uri={item.actor.avatarUrl} name={item.actor.name} size={44} />
+      <Avatar uri={item.actor.avatarUrl} name={item.actor.name} size={40} />
       <View className="flex-1">
         <Text className="text-text text-sm leading-5">
           <Text className="font-semibold">{item.actor.username}</Text>
@@ -52,7 +52,7 @@ function NotifRow({ item }: { item: ActivityItem }) {
           </Text>
         </Pressable>
       ) : item.postImage ? (
-        <Image source={{ uri: item.postImage }} className="w-11 h-11 rounded-md" />
+        <Image source={{ uri: item.postImage }} className="w-10 h-10 rounded-lg" />
       ) : null}
     </Pressable>
   );
@@ -64,7 +64,7 @@ export default function ActivityScreen() {
 
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
-      <View className="px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+      <View className="px-4 py-2.5 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
         <Text className="text-xl font-bold text-text">Activité</Text>
       </View>
 
@@ -77,7 +77,7 @@ export default function ActivityScreen() {
         }
         ListEmptyComponent={() =>
           !isLoading ? (
-            <View className="flex-1 justify-center items-center gap-2">
+            <View className="py-16 items-center gap-3">
               <Ionicons name="heart-outline" size={48} color={colors.textMuted} />
               <Text className="text-base font-semibold text-text">Aucune activité pour le moment</Text>
             </View>

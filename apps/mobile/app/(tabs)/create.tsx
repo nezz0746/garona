@@ -139,12 +139,12 @@ export default function CreateScreen() {
 
   if (!canPost) {
     return (
-      <View className="flex-1 bg-bg justify-center items-center p-8" style={{ paddingTop: insets.top }}>
-        <View className="w-[100px] h-[100px] rounded-full bg-surface justify-center items-center mb-4">
+      <View className="flex-1 bg-bg justify-center items-center px-8" style={{ paddingTop: insets.top }}>
+        <View className="w-[100px] h-[100px] rounded-full bg-surface justify-center items-center mb-5">
           <Ionicons name="lock-closed-outline" size={48} color={colors.textMuted} />
         </View>
         <Text className="text-xl font-bold text-text">Rang 2 requis</Text>
-        <Text className="text-sm text-text-muted text-center leading-[22px] mt-2">
+        <Text className="text-sm text-text-muted text-center leading-[22px] mt-2.5">
           Tu dois être au moins rang 2 pour publier.
         </Text>
       </View>
@@ -158,7 +158,7 @@ export default function CreateScreen() {
       style={{ paddingTop: insets.top }}
     >
       {/* Header */}
-      <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+      <View className="flex-row justify-between items-center px-4 py-2.5 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
         <Pressable onPress={() => { setSelected([]); setCaption(""); setShowGallery(false); router.navigate("/(tabs)"); }}>
           <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
@@ -208,10 +208,10 @@ export default function CreateScreen() {
 
         {/* Image previews */}
         {selected.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-3">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pb-4">
             {selected.map((uri, i) => (
-              <View key={uri} className="mr-2 relative">
-                <Image source={{ uri }} className="w-24 h-24 rounded-xl" resizeMode="cover" />
+              <View key={uri} className="mr-2.5 relative">
+                <Image source={{ uri }} className="w-[100px] h-[100px] rounded-xl" resizeMode="cover" />
                 <Pressable
                   className="absolute -top-1.5 -right-1.5 bg-black/70 w-5 h-5 rounded-full justify-center items-center"
                   onPress={() => removeImage(i)}
@@ -226,7 +226,7 @@ export default function CreateScreen() {
 
       {/* Bottom toolbar */}
       <View className="border-t border-border" style={{ borderTopWidth: 0.5 }}>
-        <View className="flex-row items-center px-4 py-2.5 gap-4">
+        <View className="flex-row items-center px-4 py-3 gap-5">
           <Pressable onPress={pickFromLibrary} disabled={selected.length >= 10}>
             <Ionicons name="image-outline" size={24} color={selected.length >= 10 ? colors.textMuted : colors.primary} />
           </Pressable>

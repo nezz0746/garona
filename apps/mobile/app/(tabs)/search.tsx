@@ -26,7 +26,7 @@ export default function SearchScreen() {
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
       <View
-        className="flex-row items-center bg-surface rounded-xl mx-4 my-2 px-3 gap-2 border"
+        className="flex-row items-center bg-surface rounded-xl mx-4 my-2.5 px-3.5 gap-2.5 border"
         style={{
           borderColor: query.length > 0 ? colors.accentSoft : colors.border,
         }}

@@ -108,7 +108,7 @@ export default function ProfileScreen() {
   const profileHeader = () => (
     <View>
       {/* Profile info */}
-      <View className="flex-row items-center px-4 pt-4 gap-6">
+      <View className="flex-row items-center px-4 pt-5 gap-5">
         <Avatar uri={profile?.avatarUrl || user?.avatarUrl} name={profile?.name || user?.name} size={80} />
         <View className="flex-1 flex-row justify-around">
           <Stat label="Posts" value={profile?.posts ?? 0} />
@@ -121,9 +121,9 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <View className="px-4 pt-3">
+      <View className="px-4 pt-3.5">
         <Text className="text-text font-semibold text-[15px]">{profile?.name || user?.name}</Text>
-        {profile?.bio && <Text className="text-text text-[13px] mt-1">{profile.bio}</Text>}
+        {profile?.bio && <Text className="text-text text-[14px] leading-[20px] mt-1">{profile.bio}</Text>}
       </View>
 
       <RangProgress
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
       />
 
       {/* Buttons */}
-      <View className="flex-row px-4 pt-4 gap-1.5">
+      <View className="flex-row px-4 pt-4 gap-2">
         <Pressable
           className="flex-1 bg-surface rounded-lg py-[7px] items-center border border-border"
           onPress={() => router.push("/edit-profile")}
@@ -144,16 +144,16 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <View className="mt-4" />
-
       {/* Tab switcher */}
-      <TabSwitcher active={activeTab} onChange={setActiveTab} />
+      <View className="mt-4">
+        <TabSwitcher active={activeTab} onChange={setActiveTab} />
+      </View>
     </View>
   );
 
   return (
     <View className="flex-1 bg-bg" style={{ paddingTop: insets.top }}>
-      <View className="flex-row justify-between items-center px-4 py-2 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
+      <View className="flex-row justify-between items-center px-4 py-2.5 border-b border-border" style={{ borderBottomWidth: 0.5 }}>
         <Text className="text-xl font-bold text-text">{user?.username || "profil"}</Text>
         <View className="flex-row gap-4">
           <IconButton name="log-out-outline" size={24} onPress={signOut} />
@@ -166,7 +166,7 @@ export default function ProfileScreen() {
           keyExtractor={(i) => i.id}
           ListHeaderComponent={profileHeader}
           ListEmptyComponent={() => (
-            <View className="py-[60px] items-center gap-3">
+            <View className="py-16 items-center gap-3">
               <Ionicons name="create-outline" size={40} color={colors.textMuted} />
               <Text className="text-text-muted text-[15px]">Aucune publication</Text>
             </View>
